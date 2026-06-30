@@ -1,7 +1,7 @@
 {
-  "updated": "2026-06-30T00:40:09Z",
-  "source": "UniFi Site Manager API v1",
-  "hosts": null,
+  "updated": "2026-06-30T00:51:53Z",
+  "source": "UniFi Network Integration API v1 (cloud proxy)",
+  "sites": null,
   "devices": null,
-  "sites": null
+  "clients": null
 }
