@@ -1,3 +1,11 @@
+"""
+fetch_unifi.py
+Fetches live device and client data from the UniFi Network Integration API
+via the ui.com cloud proxy.
+
+Required secret: UNIFI_API_KEY (set in GitHub repo Settings > Secrets > Actions)
+"""
+
 import json
 import os
 import sys
@@ -5,16 +13,17 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 
-API_KEY = os.environ.get('UNIFI_API_KEY')
-BASE_URL = 'https://api.ui.com/v1'
+API_KEY    = os.environ.get('UNIFI_API_KEY')
+CONSOLE_ID = '6C63F89F8851000000000933A63F0000000009B2372B00000000684E9AAE:1564002746'
+BASE_URL   = f'https://unifi.ui.com/proxy/consoles/{CONSOLE_ID}/proxy/network/integration/v1'
 
 if not API_KEY:
-    print("ERROR: UNIFI_API_KEY not set", file=sys.stderr)
+    print("ERROR: UNIFI_API_KEY environment variable not set", file=sys.stderr)
     sys.exit(1)
 
 HEADERS = {
     'X-API-Key': API_KEY,
-    'Accept': 'application/json',
+    'Accept':    'application/json',
 }
 
 def api_get(endpoint):
@@ -26,29 +35,35 @@ def api_get(endpoint):
             print(f"  ✓ {endpoint} — {resp.status}")
             return data
     except urllib.error.HTTPError as e:
-        print(f"  ✗ HTTP {e.code} for {endpoint}: {e.read().decode()}", file=sys.stderr)
+        body = e.read().decode()
+        print(f"  ✗ HTTP {e.code} for {endpoint}: {body}", file=sys.stderr)
         return None
     except Exception as e:
-        print(f"  ✗ Error: {e}", file=sys.stderr)
+        print(f"  ✗ Error for {endpoint}: {e}", file=sys.stderr)
         return None
 
-print("Fetching from UniFi Site Manager API...")
-hosts   = api_get('hosts')
-devices = api_get('devices')
-sites   = api_get('sites')
+print("Fetching from UniFi Network Integration API (via ui.com proxy)...")
 
+sites   = api_get('sites')
+devices = api_get('sites/default/devices')
+clients = api_get('sites/default/clients')
+
+# Build output bundle
 output = {
     'updated': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
-    'source':  'UniFi Site Manager API v1',
-    'hosts':   hosts,
-    'devices': devices,
+    'source':  'UniFi Network Integration API v1 (cloud proxy)',
     'sites':   sites,
+    'devices': devices,
+    'clients': clients,
 }
 
+device_count = len((devices or {}).get('data', []))
+client_count = len((clients or {}).get('data', []))
+print(f"\nResults: {device_count} devices, {client_count} clients")
+
 os.makedirs('data', exist_ok=True)
-with open('data/live-data.json', 'w') as f:
+output_path = 'data/live-data.json'
+with open(output_path, 'w') as f:
     json.dump(output, f, indent=2)
 
-device_count = len((devices or {}).get('data', []))
-print(f"Done — {device_count} devices saved to data/live-data.json")
-
+print(f"Saved → {output_path}  ({os.path.getsize(output_path):,} bytes)")
