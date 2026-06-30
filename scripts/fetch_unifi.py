@@ -50,6 +50,7 @@ def api_get(base_url, endpoint):
         return None
     except json.JSONDecodeError as e:
         print(f"  ✗ JSON error for {endpoint}: {e}")
+        print(f"    Raw response (first 300 chars): {raw[:300]!r}")
         return None
     except Exception as e:
         print(f"  ✗ Error for {url}: {e}")
