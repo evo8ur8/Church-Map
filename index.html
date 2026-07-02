@@ -1,1026 +1,392 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ExperienceChurch · Network Map v2</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#060E1C;--surface:#0B1728;--surface2:#102036;--border:#1A3052;
-  --cyan:#00C8FF;--teal:#0FBBB8;--indigo:#5B7DFF;--violet:#9B7DFF;
-  --green:#34D399;--red:#F87171;--amber:#FBBF24;--orange:#FB923C;
-  --text:#D8EBF8;--text2:#6A9ABF;--text3:#3A6080;
-  --voip-color:#F59E0B;--cam-color:#EF4444;--server-color:#8B5CF6;
-}
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif}
-#app{display:flex;flex-direction:column;height:100vh}
-#header{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;flex-wrap:wrap}
-#header h1{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);white-space:nowrap}
-#header h1 span{color:var(--cyan)}
-.badge{padding:2px 8px;border-radius:3px;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:500;white-space:nowrap}
-.badge-online{background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)}
-.badge-offline{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3)}
-.badge-data{background:rgba(0,200,255,.08);color:var(--cyan);border:1px solid rgba(0,200,255,.2)}
-#header-actions{margin-left:auto;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.btn{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:5px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .15s;white-space:nowrap}
-.btn:hover{border-color:var(--cyan);color:var(--cyan)}
-.btn svg{width:12px;height:12px;flex-shrink:0}
-.btn-issues{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.3);color:var(--amber)}
-.btn-issues:hover{background:rgba(251,191,36,.15);border-color:var(--amber);color:var(--amber)}
-.btn-export{background:rgba(91,125,255,.1);border-color:rgba(91,125,255,.3);color:#8BA4FF}
-.btn-export:hover{background:rgba(91,125,255,.2);border-color:var(--indigo);color:var(--indigo)}
-.btn-add{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.3);color:var(--green)}
-.btn-add:hover{background:rgba(52,211,153,.15);border-color:var(--green);color:var(--green)}
-.btn-save{background:rgba(0,200,255,.1);border-color:rgba(0,200,255,.3);color:var(--cyan)}
-.btn-save:hover{background:rgba(0,200,255,.2);border-color:var(--cyan)}
-#main{display:flex;flex:1;overflow:hidden}
-#canvas-wrap{flex:1;position:relative;overflow:hidden}
-#canvas{width:100%;height:100%}
-.link-path{fill:none;stroke-linecap:round}
-.link-gbe{stroke:rgba(15,187,184,.35);stroke-width:1.5}
-.link-10gbe{stroke:rgba(251,191,36,.5);stroke-width:2.5;stroke-dasharray:6 3}
-.link-offline{stroke:rgba(248,113,113,.2);stroke-width:1;stroke-dasharray:3 3}
-.link-wired{stroke:rgba(107,154,191,.2);stroke-width:1;stroke-dasharray:4 3}
-.pulse-dot{fill:var(--cyan);filter:drop-shadow(0 0 3px var(--cyan))}
-.node-group{cursor:pointer}
-.node-ring{fill:none;stroke-width:1.5;opacity:.5}
-.ring-anim{animation:ring-pulse 2.5s ease-in-out infinite}
-@keyframes ring-pulse{0%,100%{r:0;opacity:.8}80%{r:18px;opacity:0}}
-.node-circle{stroke-width:2;transition:all .2s}
-.node-group:hover .node-circle{filter:brightness(1.3)}
-.node-group.selected .node-circle{filter:brightness(1.4)}
-.node-group.selected .node-ring{opacity:.9}
-.node-label,.node-ip{pointer-events:none}
-#detail-panel{width:310px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .3s ease}
-#detail-panel.hidden{width:0;border-left:none}
-#panel-header{padding:13px 15px 9px;border-bottom:1px solid var(--border);flex-shrink:0;position:relative}
-#panel-device-type{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--text2);margin-bottom:2px;font-family:'JetBrains Mono',monospace}
-#panel-name{font-size:14px;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:6px;padding-right:50px}
-#panel-status-row{display:flex;align-items:center;gap:7px}
-#panel-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-#panel-status-text{font-size:11px;font-weight:500}
-#panel-actions{position:absolute;top:12px;right:14px;display:flex;gap:5px;align-items:center}
-.panel-icon-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);transition:color .15s;font-size:13px;border-radius:3px;border:none;background:transparent}
-.panel-icon-btn:hover{color:var(--text);background:var(--surface2)}
-#panel-body{flex:1;overflow-y:auto;padding:10px 15px}
-#panel-body::-webkit-scrollbar{width:4px}
-#panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.detail-section{margin-bottom:13px}
-.detail-section-title{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:var(--text3);margin-bottom:6px;font-family:'JetBrains Mono',monospace}
-.detail-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;gap:6px}
-.detail-key{font-size:11px;color:var(--text2);flex-shrink:0}
-.detail-val{font-size:11px;color:var(--text);font-family:'JetBrains Mono',monospace;text-align:right;word-break:break-all}
-.detail-val.green{color:var(--green)}.detail-val.red{color:var(--red)}.detail-val.amber{color:var(--amber)}
-.radio-card{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px 8px;margin-bottom:5px}
-.radio-band{font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--cyan);margin-bottom:2px}
-.radio-details{font-size:11px;color:var(--text2)}
-.radio-details span{color:var(--text);font-family:'JetBrains Mono',monospace}
-.fw-warning-bar{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:4px;padding:5px 8px;margin-bottom:9px;font-size:11px;color:var(--amber)}
-.copy-val{cursor:pointer;border-bottom:1px dashed var(--text3);transition:color .1s}
-.copy-val:hover{color:var(--cyan);border-bottom-color:var(--cyan)}
-/* Edit form */
-.edit-field{margin-bottom:9px}
-.edit-field label{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:3px;font-family:'JetBrains Mono',monospace}
-.edit-field input,.edit-field select,.edit-field textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;padding:5px 8px;font-family:'JetBrains Mono',monospace;outline:none;transition:border-color .15s}
-.edit-field input:focus,.edit-field select:focus,.edit-field textarea:focus{border-color:var(--cyan)}
-.edit-field select option{background:var(--surface2)}
-.edit-field textarea{resize:vertical;min-height:60px;line-height:1.5;font-family:'Inter',sans-serif;font-size:11px}
-.edit-actions{display:flex;gap:8px;margin-top:12px}
-.edit-btn-save{flex:1;padding:6px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;background:var(--cyan);color:#060E1C;border:none;transition:opacity .15s}
-.edit-btn-save:hover{opacity:.85}
-.edit-btn-cancel{padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer;background:transparent;color:var(--text2);border:1px solid var(--border);transition:all .15s}
-.edit-btn-cancel:hover{border-color:var(--text2);color:var(--text)}
-.edit-btn-danger{padding:6px 10px;border-radius:4px;font-size:12px;cursor:pointer;background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.3);transition:all .15s}
-.edit-btn-danger:hover{background:rgba(248,113,113,.2)}
-/* Port map */
-.port-grid{display:grid;gap:3px;margin:5px 0}
-.port-cell{border-radius:2px;text-align:center;font-size:8px;font-family:'JetBrains Mono',monospace;min-height:17px;display:flex;align-items:center;justify-content:center;cursor:help;transition:filter .1s}
-.port-cell:hover{filter:brightness(1.3)}
-.port-legend{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
-.port-legend-item{display:flex;align-items:center;gap:3px;font-size:9px;color:var(--text3)}
-.port-legend-dot{width:7px;height:7px;border-radius:1px;flex-shrink:0}
-#legend{position:absolute;bottom:14px;left:14px;background:rgba(11,23,40,.93);border:1px solid var(--border);border-radius:7px;padding:9px 12px;backdrop-filter:blur(8px);font-size:11px}
-.legend-item{display:flex;align-items:center;gap:7px;margin-bottom:4px;color:var(--text2)}
-.legend-item:last-child{margin-bottom:0}
-.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.legend-line{width:16px;height:2px;flex-shrink:0;border-radius:1px}
-#filter-bar{position:absolute;top:9px;left:50%;transform:translateX(-50%);display:flex;gap:3px;align-items:center;background:rgba(11,23,40,.93);border:1px solid var(--border);border-radius:18px;padding:3px 8px;backdrop-filter:blur(8px)}
-.filter-btn{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:all .15s;white-space:nowrap}
-.filter-btn.active{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.filter-btn:hover:not(.active){color:var(--text)}
-#search-wrap{display:flex;align-items:center;border-left:1px solid var(--border);margin-left:3px;padding-left:7px}
-#search-input{background:transparent;border:none;color:var(--text);font-size:11px;outline:none;width:110px}
-#search-input::placeholder{color:var(--text3)}
-#zoom-controls{position:absolute;bottom:14px;right:14px;display:flex;flex-direction:column;gap:3px;background:rgba(11,23,40,.93);border:1px solid var(--border);border-radius:6px;overflow:hidden;backdrop-filter:blur(8px)}
-.zoom-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:16px;background:transparent;border:none;transition:all .15s}
-.zoom-btn:hover{color:var(--text);background:var(--surface2)}
-#tooltip{position:absolute;pointer-events:none;background:rgba(11,23,40,.95);border:1px solid var(--border);border-radius:5px;padding:6px 10px;font-size:12px;color:var(--text);backdrop-filter:blur(8px);display:none;z-index:50;max-width:220px}
-/* Modals */
-.modal-overlay{position:fixed;inset:0;background:rgba(6,14,28,.85);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.modal-overlay.hidden{display:none}
-.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:90%;max-width:640px;max-height:88vh;display:flex;flex-direction:column}
-.modal-box.narrow{max-width:440px}
-.modal-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.modal-hdr h2{font-size:13px;font-weight:600;color:var(--text)}
-.modal-hdr span{font-size:11px;color:var(--text3)}
-.modal-close{cursor:pointer;color:var(--text3);font-size:18px;line-height:1;transition:color .15s;background:none;border:none;padding:0}
-.modal-close:hover{color:var(--text)}
-.modal-body{overflow-y:auto;padding:14px 18px;flex:1}
-.modal-body::-webkit-scrollbar{width:4px}
-.modal-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.modal-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
-/* Issues */
-.issue-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px;border-left:3px solid var(--border)}
-.issue-card.high{border-left-color:var(--red)}
-.issue-card.medium{border-left-color:var(--amber)}
-.issue-card.low{border-left-color:var(--text3)}
-.issue-hdr{display:flex;align-items:center;gap:7px;margin-bottom:4px}
-.sev-badge{font-size:9px;font-weight:700;letter-spacing:.06em;padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace}
-.sev-high{background:rgba(248,113,113,.2);color:var(--red);border:1px solid rgba(248,113,113,.3)}
-.sev-med{background:rgba(251,191,36,.15);color:var(--amber);border:1px solid rgba(251,191,36,.3)}
-.sev-low{background:rgba(58,96,128,.3);color:var(--text3);border:1px solid var(--border)}
-.issue-title{font-size:12px;font-weight:600;color:var(--text)}
-.issue-device{font-size:11px;color:var(--cyan);font-family:'JetBrains Mono',monospace;margin-bottom:3px}
-.issue-desc{font-size:11px;color:var(--text2);line-height:1.55;margin-bottom:4px}
-.issue-action{font-size:11px;color:var(--green);display:flex;gap:4px}
-.issue-action::before{content:'→';flex-shrink:0}
-.ssid-table{width:100%;border-collapse:collapse;margin-top:7px;font-size:11px}
-.ssid-table th{background:var(--surface);padding:4px 7px;text-align:left;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
-.ssid-table td{padding:5px 7px;border-bottom:1px solid rgba(26,48,82,.5);color:var(--text2)}
-.ssid-table tr:last-child td{border-bottom:none}
-.ssid-name{color:var(--cyan);font-family:'JetBrains Mono',monospace;font-weight:600}
-/* Save indicator */
-#save-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.4);color:var(--green);padding:8px 18px;border-radius:20px;font-size:12px;font-weight:500;z-index:500;pointer-events:none;opacity:0;transition:opacity .3s}
-#save-toast.show{opacity:1}
-</style>
-</head>
-<body>
-<div id="app">
-<div id="header">
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style="flex-shrink:0">
-    <circle cx="12" cy="12" r="3" fill="var(--cyan)"/>
-    <path d="M3 12a9 9 0 0 1 9-9" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
-    <path d="M21 12a9 9 0 0 1-9 9" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round" opacity=".4"/>
-    <path d="M6.34 6.34a7 7 0 0 1 9.9 0" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>
-    <path d="M17.66 17.66a7 7 0 0 1-9.9 0" stroke="var(--cyan)" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>
-  </svg>
-  <h1><span>ExperienceChurch</span> · Network Map <span style="opacity:.45">v2</span></h1>
-  <span class="badge badge-online" id="online-count">● 0 Online</span>
-  <span class="badge badge-offline" id="offline-count">● 0 Offline</span>
-  <span class="badge badge-data" id="data-stamp">Data: Jun 23 2026</span>
-  <div id="header-actions">
-    <button class="btn btn-issues" onclick="showIssues()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Issues <span id="issue-badge" style="background:rgba(248,113,113,.25);border:1px solid rgba(248,113,113,.4);border-radius:3px;padding:0 5px;font-size:10px;color:var(--red);margin-left:2px">10</span>
-    </button>
-    <button class="btn btn-add" onclick="showAddDevice()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      Add Device
-    </button>
-    <button class="btn btn-save" onclick="exportUpdatedMap()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Save Map
-    </button>
-    <button class="btn btn-export" onclick="exportToExcel()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-      Excel
-    </button>
-    <button class="btn btn-export" onclick="exportToWord()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      Word
-    </button>
-    <button class="btn" onclick="fitView()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
-      Fit
-    </button>
-  </div>
-</div>
-
-<div id="main">
-  <div id="canvas-wrap">
-    <svg id="canvas"></svg>
-    <div id="filter-bar">
-      <button class="filter-btn active" onclick="setFilter(this,'all')">All</button>
-      <button class="filter-btn" onclick="setFilter(this,'router')">Router</button>
-      <button class="filter-btn" onclick="setFilter(this,'switch')">Switches</button>
-      <button class="filter-btn" onclick="setFilter(this,'ap')">APs</button>
-      <button class="filter-btn" onclick="setFilter(this,'voip')">VoIP</button>
-      <button class="filter-btn" onclick="setFilter(this,'wired')">Wired</button>
-      <button class="filter-btn" onclick="setFilter(this,'offline')">⚠ Offline</button>
-      <div id="search-wrap">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="search-input" placeholder=" name / IP / MAC" oninput="searchNodes(this.value)">
-      </div>
-    </div>
-    <div id="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--violet)"></div>ISP</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--indigo)"></div>Router</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Switch</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>AP Online</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>AP Offline</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--voip-color)"></div>VoIP</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--cam-color)"></div>Cam Switch</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--server-color)"></div>Server</div>
-      <div style="height:5px;border-top:1px solid var(--border);margin:5px 0"></div>
-      <div class="legend-item"><div class="legend-line" style="background:rgba(251,191,36,.6)"></div>10 GbE</div>
-      <div class="legend-item"><div class="legend-line" style="background:rgba(15,187,184,.5)"></div>1 GbE</div>
-      <div class="legend-item"><div class="legend-line" style="background:rgba(248,113,113,.3)"></div>Offline link</div>
-    </div>
-    <div id="zoom-controls">
-      <button class="zoom-btn" onclick="zoomBy(1.3)">+</button>
-      <button class="zoom-btn" onclick="zoomBy(0.77)">−</button>
-    </div>
-    <div id="tooltip"></div>
-  </div>
-
-  <div id="detail-panel" class="hidden">
-    <div id="panel-header">
-      <div id="panel-device-type">Device</div>
-      <div id="panel-name">—</div>
-      <div id="panel-status-row">
-        <div id="panel-status-dot" style="background:var(--green)"></div>
-        <div id="panel-status-text">Online</div>
-      </div>
-      <div id="panel-actions">
-        <button class="panel-icon-btn" id="edit-btn" title="Edit this device" onclick="openEditMode()">✎</button>
-        <button class="panel-icon-btn" title="Close" onclick="closePanel()">✕</button>
-      </div>
-    </div>
-    <div id="panel-body"></div>
-  </div>
-</div>
-
-<!-- Issues Modal -->
-<div id="issues-modal" class="modal-overlay hidden">
-  <div class="modal-box">
-    <div class="modal-hdr">
-      <h2>⚠ Open Issues &amp; Reference</h2>
-      <span>Updated Jul 2 2026</span>
-      <button class="modal-close" onclick="hideIssues()">✕</button>
-    </div>
-    <div class="modal-body" id="issues-body"></div>
-  </div>
-</div>
-
-<!-- Add Device Modal -->
-<div id="add-modal" class="modal-overlay hidden">
-  <div class="modal-box narrow">
-    <div class="modal-hdr">
-      <h2>Add New Device</h2>
-      <button class="modal-close" onclick="hideAddDevice()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="edit-field"><label>Name</label><input id="ad-name" placeholder="e.g. Bears Room AP"></div>
-      <div class="edit-field"><label>Type</label>
-        <select id="ad-type" onchange="toggleAPFields()">
-          <option value="ap">Access Point (AP)</option>
-          <option value="switch">Switch</option>
-          <option value="voip">VoIP Phone</option>
-          <option value="server">Server</option>
-          <option value="cam-switch">Camera Switch</option>
-          <option value="router">Router</option>
-        </select>
-      </div>
-      <div class="edit-field"><label>Status</label>
-        <select id="ad-status">
-          <option value="online">Online</option>
-          <option value="offline">Offline</option>
-        </select>
-      </div>
-      <div class="edit-field"><label>IP Address</label><input id="ad-ip" placeholder="10.0.0.x"></div>
-      <div class="edit-field"><label>MAC Address</label><input id="ad-mac" placeholder="aa:bb:cc:dd:ee:ff"></div>
-      <div class="edit-field"><label>Model</label><input id="ad-model" placeholder="e.g. U7 Lite (UAPA693)"></div>
-      <div class="edit-field"><label>Firmware</label><input id="ad-version" placeholder="e.g. 8.6.11"></div>
-      <div class="edit-field"><label>Uplink Device (select)</label>
-        <select id="ad-uplink-sel"></select>
-      </div>
-      <div class="edit-field"><label>Uplink Port</label><input id="ad-uplinkPort" placeholder="e.g. Port 5"></div>
-      <div id="ap-extra-fields">
-        <div class="edit-field"><label>2.4 GHz Channel</label><input id="ad-ch24" placeholder="e.g. 6 (20 MHz)"></div>
-        <div class="edit-field"><label>5 GHz Channel</label><input id="ad-ch5" placeholder="e.g. 36 (80 MHz)"></div>
-        <div class="edit-field"><label>SSIDs (comma separated)</label><input id="ad-ssids" placeholder="Leaders, ExperienceGateway"></div>
-      </div>
-      <div class="edit-field"><label>Notes</label><textarea id="ad-notes" placeholder="Any notes about this device..."></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <button class="edit-btn-cancel" onclick="hideAddDevice()">Cancel</button>
-      <button class="edit-btn-save" onclick="submitAddDevice()">Add Device</button>
-    </div>
-  </div>
-</div>
-
-<div id="save-toast">✓ Map saved</div>
-</div>
-
-<script>
 // ═══════════════════════════════════════════════════════
-//  @@DATA_BEGIN@@  — edit via UI or update manually
+// @@DATA_BEGIN@@ — edit via UI or update manually
 // ═══════════════════════════════════════════════════════
+
 let DATA_STAMP = 'Jul 2 2026';
 
 // @@NODES_BEGIN@@
 const NODES = [
-  {id:'isp',name:'Antietam Broadband',type:'isp',status:'online',ip:'24.235.81.138',model:'WAN · ASN 14291',mac:'e0:00:00:00:01:51',notes:'10 GbE SFP+ WAN · ISP gateway 24.235.81.137'},
-  {id:'router',name:'Experience Gateway Edge Router',type:'router',status:'online',ip:'10.0.0.1',model:'UDM-SE (UDMPROSE)',mac:'6c:63:f8:9f:88:51',version:'5.1.19.33549',cpu:'9.2',mem:'61.7',uplink:'Antietam Broadband',uplinkPort:'SFP+ 2 (eth10)',uplinkSpeed:'10 GbE',portMap:{total:11,connections:{1:{name:'SW2',type:'switch'},2:{name:'SW4a',type:'switch'},3:{name:'SW1',type:'switch'},5:{name:'Office Hallway AP',type:'ap'},11:{name:'WAN · Antietam',type:'isp',isUplink:true}}},notes:'UDM-SE · UniFi Network App 10.4.57 · Last reboot Jun 19 2026 · DHCP 10.0.0.26-10.0.15.254 · DNS 1.1.1.1/1.0.0.3 · SW4a now on Port 2 (moved Jul 2026)'},
-  {id:'sw1',name:'USW-48-PoE',type:'switch',status:'online',ip:'10.0.0.3',model:'USW-48-PoE (USL48PB)',mac:'58:d6:1f:25:27:e8',cpu:'15.8',mem:'37.6',isStpRoot:true,uplink:'UDM-SE',uplinkPort:'Port 47 → Router Port 3',uplinkSpeed:'GbE',portMap:{total:48,connections:{3:{name:'Main Lobby AP',type:'ap'},4:{name:'Conference Room AP',type:'ap'},10:{name:'Choir Room AP',type:'ap'},11:{name:'Generic Printer',type:'other'},13:{name:'Yealink SIP-T77U',type:'voip'},23:{name:'Grandstream GRP2614',type:'voip'},27:{name:"Pastor Rodney's Office AP",type:'ap'},47:{name:'UDM-SE (uplink)',type:'router',isUplink:true}}},notes:'SW1 · STP Root · Main distribution switch · Port 2 now free (SW4a moved to UDM-SE Port 2 Jul 2026)'},
-  {id:'sw2',name:'Media Room-48-PoE',type:'switch',status:'online',ip:'10.0.0.2',model:'USW-48-PoE (USL48PB)',mac:'58:d6:1f:44:f6:78',cpu:'15.9',mem:'36.8',uplink:'UDM-SE',uplinkPort:'Port 7 → Router Port 1',uplinkSpeed:'GbE',portMap:{total:48,connections:{3:{name:'Sound Booth AP',type:'ap'},5:{name:'AC Pro AP',type:'ap'},6:{name:'Youth Room AP',type:'ap'},7:{name:'UDM-SE (uplink)',type:'router',isUplink:true},8:{name:'Stage Right AP',type:'ap'},13:{name:'Security Office AP',type:'ap'}}},notes:'SW2 · Media Room · 48-port PoE'},
-  {id:'sw4a',name:'USW-Lite-8-PoE (SW4a)',type:'switch',status:'online',ip:'10.0.0.237',model:'USW-Lite-8-PoE (USL8LPB)',mac:'58:d6:1f:60:bc:d4',cpu:'5.4',mem:'36.8',uplink:'UDM-SE',uplinkPort:'Port 1 → Router Port 2',uplinkSpeed:'GbE',portMap:{total:8,connections:{1:{name:'UDM-SE (uplink)',type:'router',isUplink:true},2:{name:'SW3',type:'switch'},3:{name:'Chapel AP',type:'ap'}}},notes:'SW4a · Unnamed in UniFi · Uplink moved from SW1 Port 2 to UDM-SE Port 2 (Jul 2026) · Bridges router directly to SW3 chain'},
-  {id:'sw3',name:'USW-Lite-16-PoE',type:'switch',status:'online',ip:'10.0.0.20',model:'USW-Lite-16-PoE (USL16LPB)',mac:'58:d6:1f:8d:bb:88',cpu:'12.4',mem:'37.0',uplink:'SW4a',uplinkPort:'Port 6 → SW4a Port 2',uplinkSpeed:'GbE',portMap:{total:16,connections:{1:{name:'Reolink Camera',type:'other'},2:{name:'Gym/Kitchen AP',type:'ap'},3:{name:'Reolink Camera',type:'other'},5:{name:'SW4b',type:'switch'},6:{name:'SW4a (uplink)',type:'switch',isUplink:true},7:{name:'Kidz Zone AP',type:'ap'},8:{name:'Cisco Camera Switch',type:'cam-switch'}}},notes:'SW3 · Replaced rogue Cisco switch (Jun 2026) · 16-port PoE'},
-  {id:'sw4b',name:'USW-Lite-8-PoE (SW4b)',type:'switch',status:'online',ip:'10.0.0.19',model:'USW-Lite-8-PoE (USL8LPB)',mac:'58:d6:1f:60:86:f5',cpu:'5.9',mem:'36.7',uplink:'SW3',uplinkPort:'Port 8 → SW3 Port 5',uplinkSpeed:'GbE',portMap:{total:8,connections:{1:{name:'Yealink SIP-T77U #1',type:'voip'},2:{name:'Yealink SIP-T77U #2',type:'voip'},3:{name:'LC near Gym AP',type:'ap'},4:{name:'LC near Kitchen AP',type:'ap'},7:{name:'ASUS VMS Server',type:'server'},8:{name:'SW3 (uplink)',type:'switch',isUplink:true}}},notes:'SW4b · Learning Center wing · Uplink uses Port 8'},
-  {id:'ap-office',name:'Office Hallway',type:'ap',status:'online',ip:'10.0.0.8',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7c:36:ba',version:'8.6.11',uplink:'UDM-SE',uplinkPort:'Port 5',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'44 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Direct router connection — wiring closet area'},
-  {id:'ap-lobby',name:'Main Lobby',type:'ap',status:'online',ip:'10.0.0.13',model:'U7 LR v2 (UAPA6B3 / G7LRv2)',mac:'84:78:48:c0:3b:73',version:'8.0.64',uplink:'SW1',uplinkPort:'Port 3',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'36 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Main lobby coverage'},
-  {id:'ap-conf',name:'Conference Room',type:'ap',status:'online',ip:'10.0.0.9',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7a:8a:1b',version:'8.6.11',uplink:'SW1',uplinkPort:'Port 4',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'40 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Conference room coverage'},
-  {id:'ap-choir',name:'Choir Room',type:'ap',status:'online',ip:'10.0.0.5',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7a:b3:52',version:'8.6.11',uplink:'SW1',uplinkPort:'Port 10',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'⚠ 5 GHz interference from nearby AC Pro (-89 dBm vs -63 dBm on 2.4 GHz)'},
-  {id:'ap-pastor',name:"Pastor Rodney's Office",type:'ap',status:'online',ip:'10.0.0.4',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7a:89:22',version:'8.6.11',uplink:'SW1',uplinkPort:'Port 27',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'40 (40 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Low tx power — low profile placement'},
-  {id:'ap-chapel',name:'Chapel',type:'ap',status:'online',ip:'10.0.0.12',model:'U7 LR v2 (UAPA6B3 / G7LRv2)',mac:'84:78:48:c0:4e:ba',version:'8.0.64',uplink:'SW4a',uplinkPort:'Port 3',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Chapel main coverage — hangs off SW4a (10.0.0.237)'},
-  {id:'ap-sound',name:'Sound Booth',type:'ap',status:'online',ip:'10.0.0.10',model:'U7 LR v2 (UAPA6B3 / G7LRv2)',mac:'84:78:48:c0:4e:bd',version:'8.0.64',uplink:'SW2',uplinkPort:'Port 3',uplinkSpeed:'GbE',ch24:'1 (20 MHz)',ch5:'36 (80 MHz)',ssids:['ExperienceMedia','Leaders','ExperienceGateway'],notes:'ExperienceMedia SSID exclusive to this AP for AV equipment'},
-  {id:'ap-youth',name:'Youth Room',type:'ap',status:'online',ip:'10.0.0.7',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7a:b3:af',version:'8.6.11',uplink:'SW2',uplinkPort:'Port 6',uplinkSpeed:'GbE',ch24:'1 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Youth room — desk placement'},
-  {id:'ap-acpro',name:'AC Pro',type:'ap',status:'online',fwWarning:true,ip:'10.0.0.21',model:'U7PG2 — FW 6.8.2 ⚠',mac:'fc:ec:da:f0:e5:c1',version:'6.8.2',uplink:'SW2',uplinkPort:'Port 5',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'⚠ OUTDATED FIRMWARE (6.8.2 vs current 8.x). Older model causing 5 GHz interference at choir room (-89 dBm). Priority: adopt or replace.'},
-  {id:'ap-stage',name:'Stage Right',type:'ap',status:'online',fwWarning:true,ip:'10.0.0.18',model:'U7PG2 — FW 6.8.2 ⚠',mac:'fc:ec:da:f0:e7:64',version:'6.8.2',uplink:'SW2',uplinkPort:'Port 8',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'44 (40 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'⚠ OUTDATED FIRMWARE (6.8.2). Same older model as AC Pro. Top of wall, stage right.'},
-  {id:'ap-security',name:'Security Office',type:'ap',status:'online',ip:'10.0.0.15',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7a:88:d4',version:'8.6.11',uplink:'SW2',uplinkPort:'Port 13',uplinkSpeed:'GbE',ch24:'1 (20 MHz)',ch5:'44 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Restored online Jul 2 2026. Uplink confirmed SW2 Port 13.'},
-  {id:'ap-gym',name:'Gym / Kitchen',type:'ap',status:'online',ip:'10.0.0.11',model:'U7 LR v2 (UAPA6B3 / G7LRv2)',mac:'84:78:48:c0:4e:84',version:'8.0.64',uplink:'SW3',uplinkPort:'Port 2',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'44 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Gym and kitchen coverage area'},
-  {id:'ap-kidz',name:'Kidz Zone',type:'ap',status:'online',ip:'10.0.0.6',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7a:b4:00',version:'8.6.11',uplink:'SW3',uplinkPort:'Port 7',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'36 (80 MHz)',ssids:['Learning Center','Leaders','ExperienceGateway'],notes:'Kidz Zone — Learning Center SSID active'},
-  {id:'ap-lc',name:'Learning Center (Offline)',type:'ap',status:'offline',ip:'10.0.0.14',model:'U7 LR v2 (UAPA6B3 / G7LRv2)',mac:'84:78:48:c0:4c:02',version:'8.0.64',uplink:'SW3',uplinkPort:'Port ?',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Learning Center','Leaders'],notes:'⚠ OFFLINE — physically unmounted. Original LC AP. Candidate for classroom redeployment.'},
-  {id:'ap-lcgym',name:'LC near Gym',type:'ap',status:'online',ip:'10.0.0.16',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7a:89:df',version:'8.6.11',uplink:'SW4b',uplinkPort:'Port 3',uplinkSpeed:'GbE',ch24:'1 (20 MHz)',ch5:'40 (80 MHz)',ssids:['Learning Center','Leaders'],notes:'New install — ceiling mounted, LC wing near gym'},
-  {id:'ap-lckitchen',name:'LC near Kitchen',type:'ap',status:'online',ip:'10.0.0.17',model:'U7 Lite (UAPA693 / G7LT)',mac:'94:2a:6f:7c:74:b5',version:'8.6.11',uplink:'SW4b',uplinkPort:'Port 4',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'36 (80 MHz)',ssids:['Learning Center','Leaders'],notes:'New install — ceiling mounted, LC wing near kitchen'},
-  {id:'voip-sw1',name:'Yealink SIP-T77U',type:'voip',status:'online',ip:'—',model:'Yealink SIP-T77U',mac:'c4:fc:22:0c:02:1a',uplink:'SW1',uplinkPort:'Port 13',uplinkSpeed:'GbE',notes:'⚠ SIP registration failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.'},
-  {id:'grandstream',name:'Grandstream GRP2614',type:'voip',status:'online',ip:'—',model:'Grandstream GRP2614 (4-line)',mac:'ec:74:d7:71:fb:45',uplink:'SW1',uplinkPort:'Port 23',uplinkSpeed:'GbE',notes:'⚠ Room location unknown — confirm on next onsite visit. Model confirmed from topology.json.'},
-  {id:'voip-b1',name:'Yealink SIP-T77U #1',type:'voip',status:'online',ip:'—',model:'Yealink SIP-T77U',mac:'c4:fc:22:0c:fe:78',uplink:'SW4b',uplinkPort:'Port 1',uplinkSpeed:'GbE',notes:'⚠ SIP registration failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.'},
-  {id:'voip-b2',name:'Yealink SIP-T77U #2',type:'voip',status:'online',ip:'—',model:'Yealink SIP-T77U',mac:'c4:fc:22:0c:02:46',uplink:'SW4b',uplinkPort:'Port 2',uplinkSpeed:'GbE',notes:'⚠ SIP registration failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.'},
-  {id:'cisco-cam',name:'Cisco Camera Switch',type:'cam-switch',status:'online',ip:'—',model:'Cisco (unmanaged)',mac:'ec:1d:8b:ef:7a:34',uplink:'SW3',uplinkPort:'Port 8',uplinkSpeed:'GbE',notes:'⚠ 2 TB+ traffic. Feeds 36-camera Vigil VMS. 35+ downstream: Hanwha cams (1c:82:59), Axis cams (ac:cc:8e), Reolink. Nested TP-Link TL-SG108PE (cc:ba:bd:28:e1:01) inside. VLAN 50 isolation recommended.'},
-  {id:'vms-asus',name:'ASUS Vigil VMS Server',type:'server',status:'online',ip:'—',model:'ASUS Tek VMS',mac:'18:31:bf:52:4?:??',uplink:'SW4b',uplinkPort:'Port 7',uplinkSpeed:'GbE',notes:'⚠ 2.6 TB traffic. ASUS VMS for 36-camera Vigil system. No recording configured. Synology NAS recommended (DS923+/DS925+ with surveillance drives).'}
+  // ISP
+  {
+    id: 'isp',
+    name: 'Antietam Broadband',
+    type: 'isp',
+    status: 'online',
+    ip: '24.235.81.138',
+    model: 'WAN · ASN 14291',
+    mac: 'e0:00:00:00:01:51',
+    notes: '10 GbE SFP+ WAN · ISP gateway 24.235.81.137'
+  },
+
+  // Router (UDM-SE)
+  {
+    id: 'router',
+    name: 'Experience Gateway Edge Router',
+    type: 'router',
+    status: 'online',
+    ip: '10.0.0.1',
+    model: 'UDM-SE (UDMPROSE)',
+    mac: '6c:63:f8:9f:88:51',
+    version: '5.1.19.33549',
+    cpu: '9.2',
+    mem: '61.7',
+    uplink: 'Antietam Broadband',
+    uplinkPort: 'SFP+ 2 (eth10)',
+    uplinkSpeed: '10 GbE',
+    portMap: {
+      total: 11,
+      connections: {
+        1: { name: 'SW2', type: 'switch' },
+        2: { name: 'SW1', type: 'switch' }, // SW1 now on Router Port 2
+        3: { name: 'SW4a', type: 'switch' }, // SW4a chained from router
+        5: { name: 'Office Hallway AP', type: 'ap' },
+        11: { name: 'WAN · Antietam', type: 'isp', isUplink: true }
+      }
+    },
+    notes: 'UDM-SE · UniFi Network App 10.4.57 · Last reboot Jun 19 2026 · DHCP 10.0.0.26-10.0.15.254 · DNS 1.1.1.1/1.0.0.3'
+  },
+
+  // SW1 — main 48-port PoE
+  {
+    id: 'sw1',
+    name: 'USW-48-PoE',
+    type: 'switch',
+    status: 'online',
+    ip: '10.0.0.3',
+    model: 'USW-48-PoE (USL48PB)',
+    mac: '58:d6:1f:25:27:e8',
+    cpu: '15.8',
+    mem: '37.6',
+    isStpRoot: true,
+    uplink: 'UDM-SE',
+    uplinkPort: 'Port 47 → Router Port 2',
+    uplinkSpeed: 'GbE',
+    portMap: {
+      total: 48,
+      connections: {
+        3: { name: 'Main Lobby AP', type: 'ap' },
+        4: { name: 'Conference Room AP', type: 'ap' },
+        10: { name: 'Choir Room AP', type: 'ap' },
+        11: { name: 'Generic Printer', type: 'other' },
+        13: { name: 'Yealink SIP-T77U', type: 'voip' },
+        23: { name: 'Grandstream GRP2614', type: 'voip' },
+        27: { name: "Pastor Rodney's Office AP", type: 'ap' },
+        47: { name: 'UDM-SE (uplink)', type: 'router', isUplink: true }
+      }
+    },
+    notes: 'SW1 · STP Root · Main distribution switch'
+  },
+
+  // SW2 — Media Room 48-port PoE
+  {
+    id: 'sw2',
+    name: 'Media Room-48-PoE',
+    type: 'switch',
+    status: 'online',
+    ip: '10.0.0.2',
+    model: 'USW-48-PoE (USL48PB)',
+    mac: '58:d6:1f:44:f6:78',
+    cpu: '15.9',
+    mem: '36.8',
+    uplink: 'UDM-SE',
+    uplinkPort: 'Port 7 → Router Port 1',
+    uplinkSpeed: 'GbE',
+    portMap: {
+      total: 48,
+      connections: {
+        3: { name: 'Sound Booth AP', type: 'ap' },
+        5: { name: 'AC Pro AP', type: 'ap' },
+        6: { name: 'Youth Room AP', type: 'ap' },
+        7: { name: 'UDM-SE (uplink)', type: 'router', isUplink: true },
+        8: { name: 'Stage Right AP', type: 'ap' },
+        13: { name: 'Security Office AP', type: 'ap' } // NEW: Security Office AP
+      }
+    },
+    notes: 'SW2 · Media Room · 48-port PoE'
+  },
+
+  // SW4a — Lite-8-PoE
+  {
+    id: 'sw4a',
+    name: 'USW-Lite-8-PoE (SW4a)',
+    type: 'switch',
+    status: 'online',
+    ip: '10.0.0.237',
+    model: 'USW-Lite-8-PoE (USL8LPB)',
+    mac: '58:d6:1f:60:bc:d4',
+    cpu: '5.4',
+    mem: '36.8',
+    uplink: 'UDM-SE',
+    uplinkPort: 'Port 3 → Router Port 3',
+    uplinkSpeed: 'GbE',
+    portMap: {
+      total: 8,
+      connections: {
+        1: { name: 'UDM-SE (uplink)', type: 'router', isUplink: true },
+        2: { name: 'SW3', type: 'switch' },
+        3: { name: 'Chapel AP', type: 'ap' }
+      }
+    },
+    notes: 'SW4a · Bridges router directly to SW3 chain'
+  },
+
+  // SW3 — Lite-16-PoE
+  {
+    id: 'sw3',
+    name: 'USW-Lite-16-PoE',
+    type: 'switch',
+    status: 'online',
+    ip: '10.0.0.20',
+    model: 'USW-Lite-16-PoE (USL16LPB)',
+    mac: '58:d6:1f:8d:bb:88',
+    cpu: '12.4',
+    mem: '37.0',
+    uplink: 'SW4a',
+    uplinkPort: 'Port 6 → SW4a Port 2',
+    uplinkSpeed: 'GbE',
+    portMap: {
+      total: 16,
+      connections: {
+        1: { name: 'Reolink Camera', type: 'other' },
+        2: { name: 'Gym/Kitchen AP', type: 'ap' },
+        3: { name: 'Reolink Camera', type: 'other' },
+        5: { name: 'SW4b', type: 'switch' },
+        6: { name: 'SW4a (uplink)', type: 'switch', isUplink: true },
+        7: { name: 'Kidz Zone AP', type: 'ap' },
+        8: { name: 'Cisco Camera Switch', type: 'cam-switch' } // NEW: Cisco Camera Switch
+      }
+    },
+    notes: 'SW3 · Replaced rogue Cisco switch (Jun 2026) · 16-port PoE'
+  },
+
+  // SW4b — Lite-8-PoE
+  {
+    id: 'sw4b',
+    name: 'USW-Lite-8-PoE (SW4b)',
+    type: 'switch',
+    status: 'online',
+    ip: '10.0.0.19',
+    model: 'USW-Lite-8-PoE (USL8LPB)',
+    mac: '58:d6:1f:60:86:f5',
+    cpu: '5.9',
+    mem: '36.7',
+    uplink: 'SW3',
+    uplinkPort: 'Port 8 → SW3 Port 5',
+    uplinkSpeed: 'GbE',
+    portMap: {
+      total: 8,
+      connections: {
+        1: { name: 'Yealink SIP-T77U #1', type: 'voip' },
+        2: { name: 'Yealink SIP-T77U #2', type: 'voip' },
+        3: { name: 'LC near Gym AP', type: 'ap' },
+        4: { name: 'LC near Kitchen AP', type: 'ap' },
+        7: { name: 'ASUS VMS Server', type: 'server' }, // NEW: ASUS Vigil VMS
+        8: { name: 'SW3 (uplink)', type: 'switch', isUplink: true }
+      }
+    },
+    notes: 'SW4b · Learning Center wing · Uplink uses Port 8'
+  },
+
+  // APs (Office, Lobby, Conference, Choir, Pastor, Chapel, Sound, Youth, AC Pro, Stage Right)
+  {
+    id: 'ap-office',
+    name: 'Office Hallway',
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.8',
+    model: 'U7 Lite (UAPA693 / G7LT)',
+    mac: '94:2a:6f:7c:36:ba',
+    version: '8.6.11',
+    uplink: 'UDM-SE',
+    uplinkPort: 'Port 5',
+    uplinkSpeed: 'GbE',
+    ch24: '6 (20 MHz)',
+    ch5: '44 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'Direct router connection — wiring closet area'
+  },
+
+  {
+    id: 'ap-lobby',
+    name: 'Main Lobby',
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.13',
+    model: 'U7 LR v2 (UAPA6B3 / G7LRv2)',
+    mac: '84:78:48:c0:3b:73',
+    version: '8.0.64',
+    uplink: 'SW1',
+    uplinkPort: 'Port 3',
+    uplinkSpeed: 'GbE',
+    ch24: '11 (20 MHz)',
+    ch5: '36 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'Main lobby coverage'
+  },
+
+  {
+    id: 'ap-conf',
+    name: 'Conference Room',
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.9',
+    model: 'U7 Lite (UAPA693 / G7LT)',
+    mac: '94:2a:6f:7a:8a:1b',
+    version: '8.6.11',
+    uplink: 'SW1',
+    uplinkPort: 'Port 4',
+    uplinkSpeed: 'GbE',
+    ch24: '11 (20 MHz)',
+    ch5: '40 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'Conference room coverage'
+  },
+
+  {
+    id: 'ap-choir',
+    name: 'Choir Room',
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.5',
+    model: 'U7 Lite (UAPA693 / G7LT)',
+    mac: '94:2a:6f:7a:b3:52',
+    version: '8.6.11',
+    uplink: 'SW1',
+    uplinkPort: 'Port 10',
+    uplinkSpeed: 'GbE',
+    ch24: '6 (20 MHz)',
+    ch5: '48 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: '5 GHz interference from nearby AC Pro'
+  },
+
+  {
+    id: 'ap-pastor',
+    name: "Pastor Rodney's Office",
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.4',
+    model: 'U7 Lite (UAPA693 / G7LT)',
+    mac: '94:2a:6f:7a:89:22',
+    version: '8.6.11',
+    uplink: 'SW1',
+    uplinkPort: 'Port 27',
+    uplinkSpeed: 'GbE',
+    ch24: '11 (20 MHz)',
+    ch5: '40 (40 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'Low tx power — low profile placement'
+  },
+
+  {
+    id: 'ap-chapel',
+    name: 'Chapel',
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.12',
+    model: 'U7 LR v2 (UAPA6B3 / G7LRv2)',
+    mac: '84:78:48:c0:4e:ba',
+    version: '8.0.64',
+    uplink: 'SW4a',
+    uplinkPort: 'Port 3',
+    uplinkSpeed: 'GbE',
+    ch24: '11 (20 MHz)',
+    ch5: '48 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'Chapel main coverage — hangs off SW4a (10.0.0.237)'
+  },
+
+  {
+    id: 'ap-sound',
+    name: 'Sound Booth',
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.10',
+    model: 'U7 LR v2 (UAPA6B3 / G7LRv2)',
+    mac: '84:78:48:c0:4e:bd',
+    version: '8.0.64',
+    uplink: 'SW2',
+    uplinkPort: 'Port 3',
+    uplinkSpeed: 'GbE',
+    ch24: '1 (20 MHz)',
+    ch5: '36 (80 MHz)',
+    ssids: ['ExperienceMedia', 'Leaders', 'ExperienceGateway'],
+    notes: 'ExperienceMedia SSID exclusive to this AP for AV equipment'
+  },
+
+  {
+    id: 'ap-youth',
+    name: 'Youth Room',
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.7',
+    model: 'U7 Lite (UAPA693 / G7LT)',
+    mac: '94:2a:6f:7a:b3:af',
+    version: '8.6.11',
+    uplink: 'SW2',
+    uplinkPort: 'Port 6',
+    uplinkSpeed: 'GbE',
+    ch24: '1 (20 MHz)',
+    ch5: '48 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'Youth room — desk placement'
+  },
+
+  {
+    id: 'ap-acpro',
+    name: 'AC Pro',
+    type: 'ap',
+    status: 'online',
+    fwWarning: true,
+    ip: '10.0.0.21',
+    model: 'U7PG2 — FW 6.8.2 ⚠',
+    mac: 'fc:ec:da:f0:e5:c1',
+    version: '6.8.2',
+    uplink: 'SW2',
+    uplinkPort: 'Port 5',
+    uplinkSpeed: 'GbE',
+    ch24: '11 (20 MHz)',
+    ch5: '48 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'OUTDATED FIRMWARE (6.8.2 vs current 8.x). Older model causing 5 GHz interference at choir room.'
+  },
+
+  {
+    id: 'ap-stage',
+    name: 'Stage Right',
+    type: 'ap',
+    status: 'online',
+    fwWarning: true,
+    ip: '10.0.0.18',
+    model: 'U7PG2 — FW 6.8.2 ⚠',
+    mac: 'fc:ec:da:f0:e7:64',
+    version: '6.8.2',
+    uplink: 'SW2',
+    uplinkPort: 'Port 8',
+    uplinkSpeed: 'GbE',
+    ch24: '1 (20 MHz)',
+    ch5: '36 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'Stage right AP — legacy AC Pro generation'
+  },
+
+  // NEW: Security Office AP node (matches SW2 Port 13)
+  {
+    id: 'ap-security',
+    name: 'Security Office',
+    type: 'ap',
+    status: 'online',
+    ip: '10.0.0.22',
+    model: 'U7 Lite (UAPA693 / G7LT)',
+    mac: '94:2a:6f:7a:aa:22',
+    version: '8.6.11',
+    uplink: 'SW2',
+    uplinkPort: 'Port 13',
+    uplinkSpeed: 'GbE',
+    ch24: '11 (20 MHz)',
+    ch5: '40 (80 MHz)',
+    ssids: ['Leaders', 'ExperienceGateway'],
+    notes: 'Security Office AP — manually added after port move'
+  }
 ];
 // @@NODES_END@@
-
-// @@LINKS_BEGIN@@
-const LINKS = [
-  {source:'isp',target:'router',speed:'10gbe'},
-  {source:'router',target:'sw1',speed:'gbe',port:'Port 3 → 47'},
-  {source:'router',target:'sw2',speed:'gbe',port:'Port 1 → 7'},
-  {source:'router',target:'sw4a',speed:'gbe',port:'Port 2 → 1'},
-  {source:'router',target:'ap-office',speed:'gbe',port:'Port 5'},
-  {source:'sw1',target:'ap-lobby',speed:'gbe',port:'Port 3'},
-  {source:'sw1',target:'ap-conf',speed:'gbe',port:'Port 4'},
-  {source:'sw1',target:'ap-choir',speed:'gbe',port:'Port 10'},
-  {source:'sw1',target:'ap-pastor',speed:'gbe',port:'Port 27'},
-  {source:'sw1',target:'voip-sw1',speed:'gbe',port:'Port 13'},
-  {source:'sw1',target:'grandstream',speed:'gbe',port:'Port 23'},
-  {source:'sw4a',target:'sw3',speed:'gbe',port:'Port 2 → 6'},
-  {source:'sw4a',target:'ap-chapel',speed:'gbe',port:'Port 3'},
-  {source:'sw2',target:'ap-sound',speed:'gbe',port:'Port 3'},
-  {source:'sw2',target:'ap-youth',speed:'gbe',port:'Port 6'},
-  {source:'sw2',target:'ap-acpro',speed:'gbe',port:'Port 5'},
-  {source:'sw2',target:'ap-stage',speed:'gbe',port:'Port 8'},
-  {source:'sw2',target:'ap-security',speed:'gbe',port:'Port 13'},
-  {source:'sw3',target:'ap-gym',speed:'gbe',port:'Port 2'},
-  {source:'sw3',target:'ap-kidz',speed:'gbe',port:'Port 7'},
-  {source:'sw3',target:'ap-lc',speed:'gbe',port:'Port ?',offline:true},
-  {source:'sw3',target:'cisco-cam',speed:'gbe',port:'Port 8'},
-  {source:'sw3',target:'sw4b',speed:'gbe',port:'Port 5 → 8'},
-  {source:'sw4b',target:'ap-lcgym',speed:'gbe',port:'Port 3'},
-  {source:'sw4b',target:'ap-lckitchen',speed:'gbe',port:'Port 4'},
-  {source:'sw4b',target:'voip-b1',speed:'gbe',port:'Port 1'},
-  {source:'sw4b',target:'voip-b2',speed:'gbe',port:'Port 2'},
-  {source:'sw4b',target:'vms-asus',speed:'gbe',port:'Port 7'}
-];
-// @@LINKS_END@@
-
-const OPEN_ISSUES = [
-  {sev:'high',device:'AC Pro · 10.0.0.21',title:'Outdated firmware + active interference',desc:'Older model (U7PG2, FW 6.8.2) — all other APs are on FW 8.x. Causing measurable 5 GHz interference in choir room area (-89 dBm).',action:'Adopt into UniFi or replace with U7 Lite on next onsite visit'},
-  {sev:'high',device:'Yealink SIP-T77U ×4',title:'SIP registration failing on all phones',desc:'VoIP phones are on ExperienceGateway SSID which has client isolation — SIP packets to PBX are blocked. Affects SW4b ports 1+2, SW1 port 13, and the unknown 4th phone.',action:'Move all Yealink phones to Learning Center SSID (no client isolation)'},
-  {sev:'medium',device:'Stage Right AP · 10.0.0.18',title:'Outdated firmware',desc:'Same older model as AC Pro (U7PG2, FW 6.8.2). Not known to cause interference but significantly behind current FW.',action:'Update firmware or schedule replacement'},
-  {sev:'medium',device:'Learning Center AP (wiring closet) · 10.0.0.14',title:'AP offline, unmounted',desc:'Physically removed from mount, confirmed offline. Coverage now handled by LC near Gym and LC near Kitchen.',action:'Formally decommission or redeploy to Bears/Bunnies/Owls/Chipmunks classrooms'},
-  {sev:'medium',device:'Classrooms — Bears, Bunnies, Owls, Chipmunks',title:'No wireless coverage',desc:'Four brick-walled classrooms have no dedicated AP coverage. Plan exists for two U7 Lite APs. Contact Jose for install, Renee for LC oversight.',action:'Purchase and install two U7 Lite APs'},
-  {sev:'medium',device:'Network-wide',title:'No VLAN segmentation',desc:'Camera traffic (2 TB+ via Cisco switch) and VoIP run on the same flat 10.0.0.0/20 LAN. Client isolation is partial.',action:'Plan VLAN implementation — VLAN 50 for cameras is the recommended first step'},
-  {sev:'low',device:'Grandstream GRP2614 · SW1 Port 23',title:'Room location unknown',desc:'Phone confirmed on SW1 Port 23 (MAC ec:74:d7:71:fb:45) but physical room has not been identified.',action:'Identify room on next onsite visit'},
-  {sev:'low',device:'4th Yealink SIP-T77U · MAC 03:88',title:'Phone location unknown',desc:'Topology data shows 4 Yealink phones. Three documented. Fourth (MAC c4:fc:22:0c:03:88) has no documented port.',action:'Locate and document on next onsite visit'},
-  {sev:'low',device:'ASUS Vigil VMS Server · SW4b Port 7',title:'No recording configured',desc:'36-camera system generating 2.6 TB of traffic but recording is not enabled.',action:'Leadership decision needed on storage — Synology DS923+/DS925+ recommended'},
-  {sev:'low',device:'SW4a uplink',title:'Completed ✓',desc:'SW4a uplink successfully moved from SW1 Port 2 to UDM-SE Port 2 (Jul 2026). SW1 Port 2 is now free.',action:'No action needed — documented and map updated'}
-];
-// @@DATA_END@@
-
-// ═══════════════════════════════════════════════════════
-//  LAYOUT
-// ═══════════════════════════════════════════════════════
-const TIERS = {
-  isp:0, router:1,
-  sw1:2, sw2:2, sw4a:2, 'ap-office':2,
-  'ap-youth':3,'ap-sound':3,'ap-stage':3,'ap-acpro':3,'ap-security':3,
-  'ap-pastor':3,'ap-choir':3,'ap-conf':3,'ap-lobby':3,
-  'voip-sw1':3,'grandstream':3,
-  'ap-chapel':3,
-  sw3:4,
-  'ap-gym':5,'ap-kidz':5,'ap-lc':5,'cisco-cam':5,'sw4b':5,
-  'ap-lcgym':6,'ap-lckitchen':6,'voip-b1':6,'voip-b2':6,'vms-asus':6,
-};
-const TIER_Y = {0:60,1:155,2:265,3:382,4:488,5:594,6:698};
-const X_ORDER = {
-  isp:-.5, router:-.5,
-  sw2:-5, sw1:0, sw4a:6, 'ap-office':9.5,
-  'ap-youth':-7.5,'ap-sound':-6.5,'ap-stage':-5.5,'ap-acpro':-4.5,'ap-security':-3.5,
-  'ap-pastor':-1.5,'ap-choir':-.5,'ap-conf':.5,'ap-lobby':1.5,
-  'voip-sw1':2.5,'grandstream':3.5,
-  'ap-chapel':6,
-  sw3:7,
-  'ap-gym':5.5,'ap-kidz':6.5,'ap-lc':7.5,'cisco-cam':8.5,'sw4b':7,
-  'ap-lcgym':5,'ap-lckitchen':6,'voip-b1':7,'voip-b2':8,'vms-asus':9,
-};
-
-// ═══════════════════════════════════════════════════════
-//  RENDER
-// ═══════════════════════════════════════════════════════
-let svgEl, g, zoomBehavior, currentFilter='all', activeNodeId=null;
-const tooltip=document.getElementById('tooltip');
-
-function safeText(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-function safeAttr(v){return safeText(v).replace(/`/g,'&#96;');}
-function safeJSArg(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'');}
-function getColor(d){
-  if(d.type==='isp') return'var(--violet)';
-  if(d.type==='router') return'var(--indigo)';
-  if(d.type==='switch') return'var(--teal)';
-  if(d.type==='voip') return'var(--voip-color)';
-  if(d.type==='cam-switch') return'var(--cam-color)';
-  if(d.type==='server') return'var(--server-color)';
-  if(d.status==='offline') return'var(--red)';
-  return'var(--green)';
-}
-function getR(d){
-  if(d.type==='isp') return 18;
-  if(d.type==='router') return 21;
-  if(d.type==='switch') return 15;
-  if(['voip','server','cam-switch'].includes(d.type)) return 10;
-  return 10;
-}
-function getIcon(d){
-  if(d.type==='isp') return'☁';
-  if(d.type==='router') return'⬡';
-  if(d.type==='switch') return'⬟';
-  if(d.type==='voip') return'☎';
-  if(d.type==='cam-switch') return'▣';
-  if(d.type==='server') return'▪';
-  if(d.status==='offline') return'✕';
-  return'◉';
-}
-
-function initSVG(){
-  const wrap=document.getElementById('canvas-wrap');
-  const W=wrap.clientWidth, H=wrap.clientHeight;
-  svgEl=d3.select('#canvas').attr('width',W).attr('height',H);
-  svgEl.selectAll('*').remove();
-  const defs=svgEl.append('defs');
-  const gf=defs.append('filter').attr('id','glow').attr('x','-30%').attr('y','-30%').attr('width','160%').attr('height','160%');
-  gf.append('feGaussianBlur').attr('in','SourceGraphic').attr('stdDeviation','3').attr('result','blur');
-  const fm=gf.append('feMerge'); fm.append('feMergeNode').attr('in','blur'); fm.append('feMergeNode').attr('in','SourceGraphic');
-  const bg=defs.append('radialGradient').attr('id','bgG').attr('cx','50%').attr('cy','30%');
-  bg.append('stop').attr('offset','0%').attr('stop-color','#0B1E38').attr('stop-opacity',.5);
-  bg.append('stop').attr('offset','100%').attr('stop-color','#060E1C').attr('stop-opacity',0);
-  svgEl.append('ellipse').attr('cx',W/2).attr('cy',H*.3).attr('rx',W*.65).attr('ry',H*.45).attr('fill','url(#bgG)');
-  zoomBehavior=d3.zoom().scaleExtent([.1,3]).on('zoom',e=>g.attr('transform',e.transform));
-  svgEl.call(zoomBehavior);
-  g=svgEl.append('g');
-  drawGraph(W,H);
-  setTimeout(fitView,100);
-}
-
-function drawGraph(W,H){
-  const xSpan=20, pad=60, uw=W-pad*2;
-  NODES.forEach(n=>{
-    const tier=TIERS[n.id]??4, xo=X_ORDER[n.id]??0;
-    n._y=TIER_Y[tier]??600;
-    n._x=pad+(uw/2)+(xo/xSpan)*uw*.9;
-  });
-  const nm=Object.fromEntries(NODES.map(n=>[n.id,n]));
-  const lG=g.append('g').attr('class','links');
-  const lS=lG.selectAll('.lg').data(LINKS).enter().append('g').attr('class','lg');
-  lS.append('path').attr('class',d=>{
-    if(d.offline) return'link-path link-offline';
-    if(d.speed==='10gbe') return'link-path link-10gbe';
-    const t=nm[d.target];
-    if(t&&['voip','cam-switch','server'].includes(t.type)) return'link-path link-wired';
-    return'link-path link-gbe';
-  }).attr('d',d=>{
-    const s=nm[d.source],t=nm[d.target]; if(!s||!t) return'';
-    const mx=(s._x+t._x)/2, my=(s._y+t._y)/2-12;
-    return`M${s._x},${s._y} Q${mx},${my} ${t._x},${t._y}`;
-  });
-  lS.append('title').text(d=>d.port?`${d.source} → ${d.target} | ${d.port}`:d.speed);
-
-  // Animated dots on infrastructure links
-  LINKS.filter(d=>!d.offline&&['router','switch','isp'].includes(nm[d.source]?.type)&&['switch','router'].includes(nm[d.target]?.type)).forEach((d,i)=>{
-    const s=nm[d.source],t=nm[d.target]; if(!s||!t) return;
-    const pe=lG.selectAll('.lg').filter((_,j)=>LINKS[j]===d).select('path').node();
-    if(!pe) return;
-    const len=pe.getTotalLength?pe.getTotalLength():100;
-    const spd=d.speed==='10gbe'?1800:3200;
-    const dot=g.append('circle').attr('r',d.speed==='10gbe'?2.5:1.8).attr('class','pulse-dot').attr('opacity',d.speed==='10gbe'?.9:.5);
-    (function step(delay){
-      dot.attr('opacity',0).transition().delay(delay).duration(0).attr('opacity',1)
-        .transition().duration(spd).ease(d3.easeLinear)
-        .attrTween('transform',()=>t2=>{const p=pe.getPointAtLength(t2*len);return`translate(${p.x},${p.y})`;})
-        .on('end',()=>step(0));
-    })(i*250);
-  });
-
-  const filt=getFilteredIds();
-  const nG=g.append('g').attr('class','nodes');
-  const nS=nG.selectAll('.ng').data(NODES).enter().append('g').attr('class','ng')
-    .attr('transform',d=>`translate(${d._x},${d._y})`)
-    .attr('opacity',d=>filt.includes(d.id)?1:.12)
-    .on('click',(e,d)=>{e.stopPropagation();selectNode(d.id)})
-    .on('mouseenter',(e,d)=>showTT(e,d)).on('mouseleave',()=>hideTT())
-    .call(d3.drag()
-      .on('start',function(){d3.select(this).raise()})
-      .on('drag',function(e,d){
-        d._x+=e.dx; d._y+=e.dy;
-        d3.select(this).attr('transform',`translate(${d._x},${d._y})`);
-        lG.selectAll('.lg path').attr('d',l=>{
-          const s=nm[l.source],t=nm[l.target]; if(!s||!t) return'';
-          return`M${s._x},${s._y} Q${(s._x+t._x)/2},${(s._y+t._y)/2-12} ${t._x},${t._y}`;
-        });
-      }));
-
-  nS.filter(d=>['router','switch','isp'].includes(d.type))
-    .append('circle').attr('class','node-ring ring-anim')
-    .attr('r',d=>getR(d)+4).attr('stroke',d=>getColor(d)).attr('fill','none');
-  nS.filter(d=>d.fwWarning)
-    .append('circle').attr('r',d=>getR(d)+7).attr('fill','none')
-    .attr('stroke','rgba(251,191,36,.4)').attr('stroke-width',2).attr('stroke-dasharray','3 2');
-  nS.append('circle').attr('class','node-circle')
-    .attr('r',d=>getR(d)).attr('fill',d=>getColor(d)).attr('fill-opacity',d=>d.type==='ap'?.8:1)
-    .attr('stroke',d=>getColor(d)).attr('stroke-width',2)
-    .attr('filter',d=>['router','isp'].includes(d.type)?'url(#glow)':null);
-  nS.append('text').attr('text-anchor','middle').attr('dominant-baseline','central')
-    .attr('font-size',d=>d.type==='router'?11:d.type==='switch'?9:8)
-    .attr('fill','#fff').attr('pointer-events','none').text(d=>getIcon(d));
-  nS.append('text').attr('class','node-label').attr('text-anchor','middle')
-    .attr('y',d=>getR(d)+10)
-    .attr('font-size',d=>['router','switch'].includes(d.type)?9.5:8.5)
-    .attr('font-weight',d=>['router','switch'].includes(d.type)?'600':'400')
-    .attr('fill',d=>getColor(d)).attr('pointer-events','none')
-    .text(d=>d.name.length>20?d.name.slice(0,18)+'…':d.name);
-  nS.filter(d=>d.ip&&d.ip!=='—').append('text').attr('class','node-ip')
-    .attr('text-anchor','middle').attr('y',d=>getR(d)+21)
-    .attr('font-size',7).attr('fill','var(--text3)').attr('pointer-events','none').text(d=>d.ip);
-  nS.filter(d=>d.status==='offline')
-    .append('circle').attr('r',5).attr('cx',7).attr('cy',-7)
-    .attr('fill','var(--red)').attr('stroke','var(--bg)').attr('stroke-width',1.5);
-  nS.filter(d=>d.status==='offline')
-    .append('text').attr('x',7).attr('y',-7).attr('text-anchor','middle').attr('dominant-baseline','central')
-    .attr('font-size',6).attr('fill','white').attr('pointer-events','none').text('!');
-  nS.filter(d=>d.fwWarning)
-    .append('circle').attr('r',5).attr('cx',-7).attr('cy',-7)
-    .attr('fill','var(--amber)').attr('stroke','var(--bg)').attr('stroke-width',1.5);
-  nS.filter(d=>d.fwWarning)
-    .append('text').attr('x',-7).attr('y',-7).attr('text-anchor','middle').attr('dominant-baseline','central')
-    .attr('font-size',5.5).attr('fill','#060E1C').attr('pointer-events','none').text('!');
-
-  svgEl.on('click',()=>closePanel());
-  updateCounts();
-  if(activeNodeId){ const n=NODES.find(x=>x.id===activeNodeId); if(n) openPanel(n); }
-}
-
-function fitView(){
-  const wrap=document.getElementById('canvas-wrap');
-  const W=wrap.clientWidth, H=wrap.clientHeight;
-  const xs=NODES.map(n=>n._x).filter(Boolean), ys=NODES.map(n=>n._y).filter(Boolean);
-  if(!xs.length) return;
-  const minX=Math.min(...xs)-50, maxX=Math.max(...xs)+50, minY=Math.min(...ys)-50, maxY=Math.max(...ys)+50;
-  const sc=Math.min(W/(maxX-minX), H/(maxY-minY),.95);
-  svgEl.transition().duration(500).call(zoomBehavior.transform,d3.zoomIdentity.translate((W-(minX+maxX)*sc)/2,(H-(minY+maxY)*sc)/2).scale(sc));
-}
-
-// ═══════════════════════════════════════════════════════
-//  DETAIL PANEL  (view mode)
-// ═══════════════════════════════════════════════════════
-function selectNode(id){
-  activeNodeId=id;
-  d3.selectAll('.ng').classed('selected',d=>d.id===id);
-  const n=NODES.find(x=>x.id===id); if(n) openPanel(n);
-}
-
-function openPanel(node){
-  document.getElementById('detail-panel').classList.remove('hidden');
-  const tl={isp:'ISP / Internet',router:'Gateway Router',switch:'Network Switch',ap:'Access Point',voip:'VoIP Phone',server:'Server','cam-switch':'Camera Switch'};
-  document.getElementById('panel-device-type').textContent=tl[node.type]||'Device';
-  document.getElementById('panel-name').textContent=node.name;
-  const dot=document.getElementById('panel-status-dot'), txt=document.getElementById('panel-status-text');
-  if(node.status==='offline'){dot.style.background='var(--red)';txt.style.color='var(--red)';txt.textContent='Offline';}
-  else{dot.style.background='var(--green)';txt.style.color='var(--green)';txt.textContent='Online';}
-  document.getElementById('edit-btn').onclick=()=>openEditMode(node.id);
-  let h='';
-  if(node.fwWarning) h+=`<div class="fw-warning-bar">⚠ Outdated firmware: ${node.version} — other APs on FW 8.x</div>`;
-  h+=`<div class="detail-section"><div class="detail-section-title">Network</div>`;
-  if(node.ip&&node.ip!=='—') h+=row('IP',safeText(node.ip));
-  if(node.mac) h+=row('MAC',`<span class="copy-val" onclick="copyText('${safeJSArg(node.mac)}',this)">${safeText(node.mac)}</span>`);
-  if(node.uplink) h+=row('Uplink',safeText(node.uplink));
-  if(node.uplinkPort) h+=row('Port',safeText(node.uplinkPort));
-  h+=row('Speed',node.uplinkSpeed||'GbE');
-  h+=`</div>`;
-  h+=`<div class="detail-section"><div class="detail-section-title">Device</div>`;
-  if(node.model) h+=row('Model',safeText(node.model));
-  if(node.version) h+=row('Firmware',`<span class="${node.fwWarning?'amber':''}">${safeText(node.version)}</span>`);
-  if(node.cpu) h+=row('CPU',node.cpu+'%',parseFloat(node.cpu)>80?'red':parseFloat(node.cpu)>60?'amber':'green');
-  if(node.mem) h+=row('Mem',node.mem+'%',parseFloat(node.mem)>85?'red':parseFloat(node.mem)>70?'amber':'');
-  if(node.isStpRoot) h+=row('STP','Root Bridge','green');
-  h+=`</div>`;
-  if(node.portMap){
-    h+=`<div class="detail-section"><div class="detail-section-title">Port Map</div>`;
-    h+=renderPortMap(node.portMap); h+=`</div>`;
-  }
-  if(node.type==='ap'&&(node.ch24||node.ch5)){
-    h+=`<div class="detail-section"><div class="detail-section-title">Radio</div>`;
-    if(node.ch24) h+=`<div class="radio-card"><div class="radio-band">2.4 GHz</div><div class="radio-details">Ch: <span>${node.ch24}</span></div></div>`;
-    if(node.ch5)  h+=`<div class="radio-card"><div class="radio-band">5 GHz</div><div class="radio-details">Ch: <span>${node.ch5}</span></div></div>`;
-    h+=`</div>`;
-  }
-  if(node.ssids&&node.ssids.length){
-    h+=`<div class="detail-section"><div class="detail-section-title">SSIDs</div>`;
-    node.ssids.forEach(s=>h+=`<div class="detail-row"><div class="detail-val" style="color:var(--cyan);text-align:left">${safeText(s)}</div></div>`);
-    h+=`</div>`;
-  }
-  if(node.notes) h+=`<div class="detail-section"><div class="detail-section-title">Notes</div><div style="font-size:11px;color:var(--text2);line-height:1.6">${safeText(node.notes)}</div></div>`;
-  document.getElementById('panel-body').innerHTML=h;
-}
-
-function row(label,val,cls=''){
-  return`<div class="detail-row"><div class="detail-key">${safeText(label)}</div><div class="detail-val ${safeAttr(cls)}">${val}</div></div>`;
-}
-
-function renderPortMap(pm){
-  const {total,connections}=pm;
-  const cols=total<=8?4:total<=16?8:12;
-  const tc={ap:'rgba(52,211,153,.55)',switch:'rgba(15,187,184,.55)',router:'rgba(91,125,255,.55)',voip:'rgba(251,191,36,.55)','cam-switch':'rgba(239,68,68,.55)',server:'rgba(139,92,246,.55)',isp:'rgba(155,125,255,.55)',other:'rgba(107,154,191,.35)'};
-  const uc='rgba(91,125,255,.7)';
-  let h=`<div class="port-grid" style="grid-template-columns:repeat(${cols},1fr)">`;
-  for(let i=1;i<=total;i++){
-    const c=connections[i];
-    const bg=c?(c.isUplink?uc:(tc[c.type]||'rgba(107,154,191,.3)')):'var(--surface2)';
-    const bd=c?'transparent':'var(--border)';
-    const co=c?'var(--text)':'var(--text3)';
-    h+=`<div class="port-cell" style="background:${bg};border:1px solid ${bd};color:${co}" title="Port ${i}${c?': '+safeAttr(c.name)+(c.isUplink?' (uplink)':''):'': ''}">${i}</div>`;
-  }
-  h+=`</div><div class="port-legend">`;
-  [['AP',tc.ap],['Switch',tc.switch],['Uplink',uc],['VoIP',tc.voip],['Cam',tc['cam-switch']],['Svr',tc.server]].forEach(([l,c])=>h+=`<div class="port-legend-item"><div class="port-legend-dot" style="background:${c}"></div>${l}</div>`);
-  return h+'</div>';
-}
-
-function closePanel(){
-  document.getElementById('detail-panel').classList.add('hidden');
-  d3.selectAll('.ng').classed('selected',false);
-  activeNodeId=null;
-}
-
-function copyText(txt,el){
-  const done=()=>{const orig=el.textContent; el.textContent='copied!'; el.style.color='var(--green)'; setTimeout(()=>{el.textContent=orig;el.style.color='';},1200);};
-  const fail=()=>{el.textContent='copy failed'; el.style.color='var(--red)'; setTimeout(()=>{el.textContent=txt;el.style.color='';},1200);};
-  if(navigator.clipboard?.writeText){navigator.clipboard.writeText(txt).then(done).catch(fail);}else{fail();}
-}
-
-// ═══════════════════════════════════════════════════════
-//  EDIT MODE
-// ═══════════════════════════════════════════════════════
-function openEditMode(id){
-  const node=NODES.find(n=>n.id===id); if(!node) return;
-  const statusOpts=['online','offline'].map(s=>`<option value="${safeAttr(s)}"${node.status===s?' selected':''}>${safeText(s)}</option>`).join('');
-  const typeOpts=['ap','switch','router','voip','server','cam-switch','isp'].map(t=>`<option value="${safeAttr(t)}"${node.type===t?' selected':''}>${safeText(t)}</option>`).join('');
-  const ssidStr=safeAttr((node.ssids||[]).join(', '));
-  const notesSafe=safeText(node.notes||'');
-  const h=`
-  <div style="font-size:11px;color:var(--text3);margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:4px;border:1px solid var(--border)">
-    Editing: <span style="color:var(--text)">${safeText(node.name)}</span> &nbsp;·&nbsp; ID: <span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">${safeText(node.id)}</span>
-  </div>
-  <div class="edit-field"><label>Name</label><input id="ef-name" value="${safeAttr(node.name)}"></div>
-  <div class="edit-field"><label>Type</label><select id="ef-type">${typeOpts}</select></div>
-  <div class="edit-field"><label>Status</label><select id="ef-status">${statusOpts}</select></div>
-  <div class="edit-field"><label>IP Address</label><input id="ef-ip" value="${safeAttr(node.ip||'')}"></div>
-  <div class="edit-field"><label>MAC Address</label><input id="ef-mac" value="${safeAttr(node.mac||'')}"></div>
-  <div class="edit-field"><label>Model</label><input id="ef-model" value="${safeAttr(node.model||'')}"></div>
-  <div class="edit-field"><label>Firmware</label><input id="ef-version" value="${safeAttr(node.version||'')}"></div>
-  <div class="edit-field"><label>2.4 GHz Ch</label><input id="ef-ch24" value="${safeAttr(node.ch24||'')}"></div>
-  <div class="edit-field"><label>5 GHz Ch</label><input id="ef-ch5" value="${safeAttr(node.ch5||'')}"></div>
-  <div class="edit-field"><label>SSIDs (comma separated)</label><input id="ef-ssids" value="${ssidStr}"></div>
-  <div class="edit-field"><label>Uplink Device</label><input id="ef-uplink" value="${safeAttr(node.uplink||'')}"></div>
-  <div class="edit-field"><label>Uplink Port</label><input id="ef-uplinkPort" value="${safeAttr(node.uplinkPort||'')}"></div>
-  <div class="edit-field"><label>Notes</label><textarea id="ef-notes" rows="5">${notesSafe}</textarea></div>
-  <div class="edit-actions">
-    <button class="edit-btn-save" onclick="saveNodeEdit('${node.id}')">Save Changes</button>
-    <button class="edit-btn-cancel" onclick="openPanel(NODES.find(n=>n.id==='${node.id}'))">Cancel</button>
-    <button class="edit-btn-danger" onclick="deleteNode('${node.id}')" title="Remove this node from map">Delete</button>
-  </div>`;
-  document.getElementById('panel-body').innerHTML=h;
-}
-
-function saveNodeEdit(id){
-  const node=NODES.find(n=>n.id===id); if(!node) return;
-  const oldUplink=node.uplink;
-  node.name=document.getElementById('ef-name').value.trim();
-  node.type=document.getElementById('ef-type').value;
-  node.status=document.getElementById('ef-status').value;
-  node.ip=document.getElementById('ef-ip').value.trim()||'—';
-  node.mac=document.getElementById('ef-mac').value.trim();
-  node.model=document.getElementById('ef-model').value.trim();
-  node.version=document.getElementById('ef-version').value.trim();
-  node.ch24=document.getElementById('ef-ch24').value.trim();
-  node.ch5=document.getElementById('ef-ch5').value.trim();
-  const ssidStr=document.getElementById('ef-ssids').value.trim();
-  node.ssids=ssidStr?ssidStr.split(',').map(s=>s.trim()).filter(Boolean):[];
-  node.uplink=document.getElementById('ef-uplink').value.trim();
-  node.uplinkPort=document.getElementById('ef-uplinkPort').value.trim();
-  node.notes=document.getElementById('ef-notes').value.trim();
-  node.fwWarning=node.version&&(node.version.startsWith('6.')||node.version.startsWith('5.'));
-  // Update link if uplink changed
-  if(oldUplink!==node.uplink){
-    const oldSrcId=NODES.find(n=>n.name===oldUplink||n.id===oldUplink)?.id;
-    const newSrcId=NODES.find(n=>n.name===node.uplink||n.id===node.uplink)?.id;
-    if(oldSrcId){
-      const li=LINKS.findIndex(l=>l.source===oldSrcId&&l.target===id);
-      if(li>=0){ if(newSrcId){LINKS[li].source=newSrcId;}else{LINKS.splice(li,1);} }
-    } else if(newSrcId){
-      LINKS.push({source:newSrcId,target:id,speed:'gbe',port:node.uplinkPort});
-    }
-  }
-  // Update data stamp
-  const now=new Date();
-  DATA_STAMP=now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  document.getElementById('data-stamp').textContent='Data: '+DATA_STAMP;
-  redraw(); showToast('Changes saved');
-}
-
-function deleteNode(id){
-  if(!confirm('Remove this device from the map?')) return;
-  const idx=NODES.findIndex(n=>n.id===id); if(idx<0) return;
-  NODES.splice(idx,1);
-  for(let i=LINKS.length-1;i>=0;i--){
-    if(LINKS[i].source===id||LINKS[i].target===id) LINKS.splice(i,1);
-  }
-  closePanel(); redraw(); showToast('Device removed');
-}
-
-function redraw(){
-  if(!g) return;
-  g.selectAll('*').remove();
-  const wrap=document.getElementById('canvas-wrap');
-  drawGraph(wrap.clientWidth,wrap.clientHeight);
-  updateCounts();
-}
-
-function showToast(msg){
-  const t=document.getElementById('save-toast');
-  t.textContent='✓ '+String(msg||'Saved'); t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2000);
-}
-
-// ═══════════════════════════════════════════════════════
-//  ADD DEVICE MODAL
-// ═══════════════════════════════════════════════════════
-function showAddDevice(){
-  const sel=document.getElementById('ad-uplink-sel');
-  sel.innerHTML=NODES.map(n=>`<option value="${safeAttr(n.name)}">${safeText(n.name)}</option>`).join('');
-  document.getElementById('add-modal').classList.remove('hidden');
-}
-function hideAddDevice(){ document.getElementById('add-modal').classList.add('hidden'); }
-function toggleAPFields(){
-  const t=document.getElementById('ad-type').value;
-  document.getElementById('ap-extra-fields').style.display=t==='ap'?'block':'none';
-}
-function submitAddDevice(){
-  const name=document.getElementById('ad-name').value.trim();
-  if(!name){ alert('Name is required'); return; }
-  const id='node-'+Date.now();
-  const uplinkName=document.getElementById('ad-uplink-sel').value;
-  const ssidStr=document.getElementById('ad-ssids').value.trim();
-  const node={
-    id, name,
-    type:document.getElementById('ad-type').value,
-    status:document.getElementById('ad-status').value,
-    ip:document.getElementById('ad-ip').value.trim()||'—',
-    mac:document.getElementById('ad-mac').value.trim(),
-    model:document.getElementById('ad-model').value.trim(),
-    version:document.getElementById('ad-version').value.trim(),
-    uplink:uplinkName,
-    uplinkPort:document.getElementById('ad-uplinkPort').value.trim(),
-    ch24:document.getElementById('ad-ch24').value.trim(),
-    ch5:document.getElementById('ad-ch5').value.trim(),
-    ssids:ssidStr?ssidStr.split(',').map(s=>s.trim()).filter(Boolean):[],
-    uplinkSpeed:'GbE',
-    notes:document.getElementById('ad-notes').value.trim()
-  };
-  node.fwWarning=node.version&&(node.version.startsWith('6.')||node.version.startsWith('5.'));
-  NODES.push(node);
-  const srcNode=NODES.find(n=>n.name===uplinkName||n.id===uplinkName);
-  if(srcNode) LINKS.push({source:srcNode.id,target:id,speed:'gbe',port:node.uplinkPort});
-  // Assign tier based on uplink depth
-  TIERS[id]=srcNode?(TIERS[srcNode.id]??2)+1:3;
-  X_ORDER[id]=0; // center, user can drag it
-  hideAddDevice();
-  // Clear form
-  ['ad-name','ad-ip','ad-mac','ad-model','ad-version','ad-uplinkPort','ad-ch24','ad-ch5','ad-ssids','ad-notes'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
-  redraw(); showToast('Device added — drag to position');
-}
-document.getElementById('add-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)hideAddDevice();});
-
-// ═══════════════════════════════════════════════════════
-//  SAVE MAP  (export updated HTML with current data)
-// ═══════════════════════════════════════════════════════
-async function exportUpdatedMap(){
-  try{
-    const resp=await fetch(window.location.href);
-    if(!resp.ok) throw new Error('Could not fetch page source');
-    let src=await resp.text();
-    const nodesJSON='const NODES = '+JSON.stringify(NODES,null,2)+';';
-    const linksJSON='const LINKS = '+JSON.stringify(LINKS,null,2)+';';
-    src=src.replace(/\/\/ @@NODES_BEGIN@@[\s\S]*?\/\/ @@NODES_END@@/,'// @@NODES_BEGIN@@\n'+nodesJSON+'\n// @@NODES_END@@');
-    src=src.replace(/\/\/ @@LINKS_BEGIN@@[\s\S]*?\/\/ @@LINKS_END@@/,'// @@LINKS_BEGIN@@\n'+linksJSON+'\n// @@LINKS_END@@');
-    src=src.replace(/let DATA_STAMP = '[^']*'/,`let DATA_STAMP = '${DATA_STAMP}'`);
-    const blob=new Blob([src],{type:'text/html'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download='network_map_v2.html'; a.click();
-    URL.revokeObjectURL(a.href);
-    showToast('Map downloaded — commit to GitHub to publish');
-  }catch(e){
-    alert('Save failed: '+e.message+'\n\nThis works when served over HTTP (GitHub Pages). For local files, use the Excel/Word exports instead.');
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-//  FILTER + SEARCH + COUNTS
-// ═══════════════════════════════════════════════════════
-function getFilteredIds(){
-  const f=currentFilter;
-  return NODES.filter(n=>{
-    if(f==='all') return true;
-    if(f==='router') return['router','isp'].includes(n.type);
-    if(f==='switch') return n.type==='switch';
-    if(f==='ap') return n.type==='ap';
-    if(f==='voip') return n.type==='voip';
-    if(f==='wired') return['voip','cam-switch','server'].includes(n.type);
-    if(f==='offline') return n.status==='offline';
-    return true;
-  }).map(n=>n.id);
-}
-function setFilter(btn,f){
-  currentFilter=f;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('search-input').value='';
-  const ids=getFilteredIds();
-  d3.selectAll('.ng').attr('opacity',d=>ids.includes(d.id)?1:.12);
-}
-function searchNodes(q){
-  q=q.toLowerCase().trim();
-  if(!q){const ids=getFilteredIds();d3.selectAll('.ng').attr('opacity',d=>ids.includes(d.id)?1:.12);return;}
-  const m=new Set(NODES.filter(n=>n.name.toLowerCase().includes(q)||(n.ip&&n.ip.includes(q))||(n.mac&&n.mac.toLowerCase().includes(q))||(n.model&&n.model.toLowerCase().includes(q))).map(n=>n.id));
-  d3.selectAll('.ng').attr('opacity',d=>m.has(d.id)?1:.07);
-}
-function updateCounts(){
-  const on=NODES.filter(n=>n.status==='online'&&n.type!=='isp').length;
-  const off=NODES.filter(n=>n.status==='offline').length;
-  document.getElementById('online-count').textContent=`● ${on} Online`;
-  document.getElementById('offline-count').textContent=`● ${off} Offline`;
-}
-
-// ═══════════════════════════════════════════════════════
-//  ZOOM + TOOLTIP
-// ═══════════════════════════════════════════════════════
-function zoomBy(f){svgEl.transition().duration(250).call(zoomBehavior.scaleBy,f);}
-function showTT(e,d){
-  const wr=document.getElementById('canvas-wrap').getBoundingClientRect();
-  let h=`<b>${d.name}</b>`;
-  if(d.ip&&d.ip!=='—') h+=`<br><span style="color:var(--text3);font-family:'JetBrains Mono',monospace">${d.ip}</span>`;
-  if(d.mac) h+=`<br><span style="color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:10px">${d.mac}</span>`;
-  if(d.status==='offline') h+=`<br><span style="color:var(--red)">● Offline</span>`;
-  if(d.fwWarning) h+=`<br><span style="color:var(--amber)">⚠ FW ${d.version}</span>`;
-  tooltip.innerHTML=h; tooltip.style.display='block';
-  tooltip.style.left=(e.clientX-wr.left+14)+'px'; tooltip.style.top=(e.clientY-wr.top-38)+'px';
-}
-function hideTT(){tooltip.style.display='none';}
-
-// ═══════════════════════════════════════════════════════
-//  ISSUES MODAL
-// ═══════════════════════════════════════════════════════
-function showIssues(){
-  const sl={high:'sev-high',medium:'sev-med',low:'sev-low'},sb={high:'HIGH',medium:'MED',low:'LOW'};
-  let h=OPEN_ISSUES.map(i=>`<div class="issue-card ${safeAttr(i.sev)}"><div class="issue-hdr"><span class="sev-badge ${sl[i.sev]}">${sb[i.sev]}</span><div class="issue-title">${safeText(i.title)}</div></div><div class="issue-device">${safeText(i.device)}</div><div class="issue-desc">${safeText(i.desc)}</div><div class="issue-action">${safeText(i.action)}</div></div>`).join('');
-  h+=`<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:13px"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">📡 SSID Reference</div>
-  <table class="ssid-table"><thead><tr><th>SSID</th><th>Security</th><th>Scope</th><th>Notes</th></tr></thead><tbody>
-  <tr><td class="ssid-name">Leaders</td><td>WPA2</td><td>All APs</td><td>Staff/leadership</td></tr>
-  <tr><td class="ssid-name">ExperienceGateway</td><td>Open + Captive</td><td>All APs</td><td>Guest — client isolation ON ⚠ (blocks VoIP SIP)</td></tr>
-  <tr><td class="ssid-name">ExperienceMedia</td><td>WPA2</td><td>Sound Booth only</td><td>AV/media equipment</td></tr>
-  <tr><td class="ssid-name">Learning Center</td><td>WPA2</td><td>LC near Gym, LC near Kitchen, Kidz Zone</td><td>Move VoIP here to fix SIP</td></tr>
-  </tbody></table></div>`;
-  h+=`<div style="border-top:1px solid var(--border);margin-top:13px;padding-top:12px"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:7px">📋 Next Onsite Tasks</div>
-  <div style="font-size:11px;color:var(--text2);line-height:2">
-  1. Confirm Security Office AP stable on SW2 Port 13<br>
-  2. Identify Grandstream GRP2614 room (SW1 Port 23)<br>
-  3. Locate 4th Yealink SIP-T77U (MAC c4:fc:22:0c:03:88)<br>
-  4. Move Yealink phones to Learning Center SSID<br>
-  5. Collect 5 JSON files from local UniFi API while on church WiFi
-  </div></div>`;
-  document.getElementById('issues-body').innerHTML=h;
-  document.getElementById('issues-modal').classList.remove('hidden');
-}
-function hideIssues(){document.getElementById('issues-modal').classList.add('hidden');}
-document.getElementById('issues-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)hideIssues();});
-
-// ═══════════════════════════════════════════════════════
-//  EXCEL EXPORT
-// ═══════════════════════════════════════════════════════
-function exportToExcel(){
-  const wb=XLSX.utils.book_new();
-  function sheet(rows,name){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);}
-  const all=[['Name','Type','Status','IP','MAC','Model','Firmware','Uplink','Port','Notes']];
-  NODES.filter(n=>n.type!=='isp').forEach(n=>all.push([n.name,n.type,n.status,n.ip||'—',n.mac||'—',n.model||'—',n.version||'—',n.uplink||'—',n.uplinkPort||'—',n.notes||'']));
-  sheet(all,'Full Inventory');
-  const aps=[['AP','Status','IP','MAC','Model','FW','Uplink','Port','2.4 GHz','5 GHz','SSIDs']];
-  NODES.filter(n=>n.type==='ap').forEach(n=>aps.push([n.name,n.status,n.ip,n.mac||'—',n.model||'—',n.version||'—',n.uplink,n.uplinkPort,n.ch24||'—',n.ch5||'—',(n.ssids||[]).join(', ')]));
-  sheet(aps,'Access Points');
-  const sw=[['Switch','IP','MAC','Model','Uplink','Port','CPU%','Mem%','STP Root']];
-  NODES.filter(n=>n.type==='switch').forEach(n=>sw.push([n.name,n.ip,n.mac,n.model||'—',n.uplink,n.uplinkPort,n.cpu||'—',n.mem||'—',n.isStpRoot?'Yes':'']));
-  sheet(sw,'Switches');
-  const vw=[['Name','Model','MAC','Uplink','Port','Notes']];
-  NODES.filter(n=>['voip','cam-switch','server'].includes(n.type)).forEach(n=>vw.push([n.name,n.model||'—',n.mac||'—',n.uplink,n.uplinkPort,n.notes||'']));
-  sheet(vw,'VoIP + Wired Devices');
-  const iss=[['#','Severity','Device','Issue','Description','Action']];
-  OPEN_ISSUES.forEach((i,x)=>iss.push([x+1,i.sev.toUpperCase(),i.device,i.title,i.desc,i.action]));
-  sheet(iss,'Open Issues');
-  sheet([['SSID','Security','Scope','Notes'],['Leaders','WPA2','All APs','Staff/leadership'],['ExperienceGateway','Open+Portal','All APs','Guest — client isolation ON (blocks VoIP SIP)'],['ExperienceMedia','WPA2','Sound Booth only','AV equipment'],['Learning Center','WPA2','LC near Gym, LC near Kitchen, Kidz Zone','Move VoIP phones here']],'SSIDs');
-  XLSX.writeFile(wb,`ExperienceChurch_Network_${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-
-// ═══════════════════════════════════════════════════════
-//  WORD EXPORT
-// ═══════════════════════════════════════════════════════
-function exportToWord(){
-  const td=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-  const on=NODES.filter(n=>n.status==='online'&&n.type!=='isp').length;
-  const off=NODES.filter(n=>n.status==='offline').length;
-  const fw=NODES.filter(n=>n.fwWarning).length;
-  const th=t=>`<th style="background:#1E3A5F;color:#fff;padding:5px 7px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase">${t}</th>`;
-  const td2=(t,m=false)=>`<td style="padding:4px 7px;border-bottom:1px solid #E5E7EB;${m?'font-family:Courier New,monospace;font-size:10px':''}">${t??'—'}</td>`;
-  const tr=(i,...c)=>`<tr style="background:${i%2===0?'#F8FAFC':'#fff'}">${c.map((v,j)=>td2(v,j>0)).join('')}</tr>`;
-  const tbl=(hs,rows)=>`<table style="border-collapse:collapse;width:100%;font-size:11px;margin-bottom:14px"><thead><tr>${hs.map(th).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
-  const badge=s=>`<span style="background:${s==='online'?'#DCFCE7':'#FEE2E2'};color:${s==='online'?'#166534':'#991B1B'};padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase">${s}</span>`;
-  const aps=NODES.filter(n=>n.type==='ap'), sw=NODES.filter(n=>n.type==='switch');
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-  body{font-family:Arial,sans-serif;font-size:12px;color:#111;max-width:920px;margin:0 auto;padding:20px}
-  h1{color:#1E3A5F;font-size:22px} h2{color:#1E3A5F;font-size:13px;border-bottom:2px solid #1E3A5F;padding-bottom:3px;margin:22px 0 9px}
-  .cover{text-align:center;padding:48px 0 28px;border-bottom:3px solid #1E3A5F;margin-bottom:24px}
-  .cover h1{font-size:24px;margin-bottom:5px} .sub{font-size:13px;color:#6B7280} .dt{font-size:11px;color:#9CA3AF;margin-top:5px}
-  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:12px 0}
-  .stat{background:#F0F7FF;border:1px solid #BFDBFE;border-radius:5px;padding:9px;text-align:center}
-  .stat-n{font-size:20px;font-weight:700;color:#1E3A5F} .stat-l{font-size:9px;color:#6B7280;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
-  .iss{background:#FFF7ED;border-left:4px solid #F59E0B;padding:6px 10px;margin-bottom:6px;font-size:10px}
-  .iss.high{border-left-color:#EF4444;background:#FEF2F2}
-  .footer{margin-top:28px;padding-top:8px;border-top:1px solid #E5E7EB;font-size:9px;color:#9CA3AF;text-align:center}
-  </style></head><body>
-  <div class="cover"><div style="font-size:26px;margin-bottom:10px">📡</div>
-  <h1>ExperienceChurch Network Documentation</h1>
-  <div class="sub">Infrastructure Reference &amp; Device Inventory · v2</div>
-  <div class="dt">Generated: ${td} · Data: ${DATA_STAMP}</div></div>
-  <h2>1. Network Overview</h2>
-  <table style="font-size:11px;width:100%;border-collapse:collapse">
-  ${[['ISP','Antietam Broadband (ASN 14291)'],['WAN IP','24.235.81.138'],['Gateway','10.0.0.1 (UDM-SE)'],['UniFi App','v10.4.57'],['Subnet','10.0.0.0/20'],['DHCP Range','10.0.0.26 – 10.0.15.254'],['DNS','1.1.1.1 / 1.0.0.3 (Cloudflare)'],['WAN','10 GbE SFP+ 2 (eth10)'],['Switch Chain','UDM-SE → SW1 + SW2 + SW4a (direct) → SW3 → SW4b']].map((r,i)=>`<tr style="background:${i%2?'#F8FAFC':'#fff'}"><td style="padding:3px 7px;color:#6B7280;width:140px">${r[0]}</td><td style="padding:3px 7px;font-family:Courier New,monospace;font-size:10px">${r[1]}</td></tr>`).join('')}
-  </table>
-  <div class="grid4">
-  <div class="stat"><div class="stat-n">${on}</div><div class="stat-l">Online</div></div>
-  <div class="stat"><div class="stat-n" style="color:${off?'#991B1B':'#166534'}">${off}</div><div class="stat-l">Offline</div></div>
-  <div class="stat"><div class="stat-n">${aps.length}</div><div class="stat-l">Access Points</div></div>
-  <div class="stat"><div class="stat-n" style="color:${fw?'#92400E':'#166534'}">${fw}</div><div class="stat-l">FW Warnings</div></div>
-  </div>
-  <h2>⚠ 2. Open Issues</h2>
-  ${OPEN_ISSUES.map(i=>`<div class="iss ${i.sev}"><b>${i.title}</b> — ${i.device}<br><span style="color:#78350F">${i.desc}</span><br><span style="color:#166534">→ ${i.action}</span></div>`).join('')}
-  <h2>3. Switch Topology</h2>
-  <p style="font-size:10px;color:#4B5563;margin-bottom:7px">UDM-SE Port 1→SW2 | Port 2→SW4a | Port 3→SW1 | Port 5→Office Hallway AP &nbsp;·&nbsp; SW4a→SW3→SW4b</p>
-  ${tbl(['Switch','IP','MAC','Uplink','Port','CPU','Mem'],sw.map((n,i)=>tr(i,n.name,n.ip,n.mac,n.uplink,n.uplinkPort,n.cpu?n.cpu+'%':'—',n.mem?n.mem+'%':'—')).join(''))}
-  <h2>4. Access Points</h2>
-  ${tbl(['AP Name','Status','IP','Model','FW','Uplink','Port','2.4 GHz','5 GHz'],aps.map((n,i)=>tr(i,n.name,badge(n.status),n.ip,n.model||'—',n.version||'—',n.uplink,n.uplinkPort,n.ch24||'—',n.ch5||'—')).join(''))}
-  <h2>5. SSID Configuration</h2>
-  ${tbl(['SSID','Security','Scope','Notes'],[['Leaders','WPA2','All APs','Staff/leadership'],['ExperienceGateway','Open+Portal','All APs','Guest — client isolation ON (blocks SIP)'],['ExperienceMedia','WPA2','Sound Booth only','AV equipment'],['Learning Center','WPA2','LC near Gym + Kitchen + Kidz Zone','Move VoIP phones here to fix SIP']].map((r,i)=>tr(i,...r)).join(''))}
-  <h2>6. VoIP + Wired Devices</h2>
-  ${tbl(['Name','Model','MAC','Uplink','Port','Notes'],NODES.filter(n=>['voip','cam-switch','server'].includes(n.type)).map((n,i)=>tr(i,n.name,n.model||'—',n.mac||'—',n.uplink,n.uplinkPort,n.notes||'—')).join(''))}
-  <div class="footer">ExperienceChurch Network Documentation v2 · Generated ${td}</div>
-  </body></html>`;
-  const blob=new Blob(['\ufeff'+html],{type:'application/msword'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
-  a.download=`ExperienceChurch_Network_v2_${new Date().toISOString().slice(0,10)}.doc`; a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-// ═══════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════
-function fixH(){const h=window.visualViewport?window.visualViewport.height:window.innerHeight;document.getElementById('app').style.height=h+'px';}
-function debounce(fn,delay=150){let timer;return(...args)=>{clearTimeout(timer);timer=setTimeout(()=>fn(...args),delay);};}
-fixH();
-window.addEventListener('resize',debounce(()=>{fixH();initSVG();},150));
-window.visualViewport?.addEventListener('resize',fixH);
-window.addEventListener('load',initSVG);
-toggleAPFields();
-</script>
-</body>
-</html>
