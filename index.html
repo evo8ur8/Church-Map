@@ -436,6 +436,9 @@ const X_ORDER = {
 let svgEl, g, zoomBehavior, currentFilter='all', activeNodeId=null;
 const tooltip=document.getElementById('tooltip');
 
+function safeText(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function safeAttr(v){return safeText(v).replace(/`/g,'&#96;');}
+function safeJSArg(v){return String(v??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/\r/g,'');}
 function getColor(d){
   if(d.type==='isp') return'var(--violet)';
   if(d.type==='router') return'var(--indigo)';
@@ -612,15 +615,15 @@ function openPanel(node){
   let h='';
   if(node.fwWarning) h+=`<div class="fw-warning-bar">⚠ Outdated firmware: ${node.version} — other APs on FW 8.x</div>`;
   h+=`<div class="detail-section"><div class="detail-section-title">Network</div>`;
-  if(node.ip&&node.ip!=='—') h+=row('IP',node.ip);
-  if(node.mac) h+=row('MAC',`<span class="copy-val" onclick="copyText('${node.mac}',this)">${node.mac}</span>`);
-  if(node.uplink) h+=row('Uplink',node.uplink);
-  if(node.uplinkPort) h+=row('Port',node.uplinkPort);
+  if(node.ip&&node.ip!=='—') h+=row('IP',safeText(node.ip));
+  if(node.mac) h+=row('MAC',`<span class="copy-val" onclick="copyText('${safeJSArg(node.mac)}',this)">${safeText(node.mac)}</span>`);
+  if(node.uplink) h+=row('Uplink',safeText(node.uplink));
+  if(node.uplinkPort) h+=row('Port',safeText(node.uplinkPort));
   h+=row('Speed',node.uplinkSpeed||'GbE');
   h+=`</div>`;
   h+=`<div class="detail-section"><div class="detail-section-title">Device</div>`;
-  if(node.model) h+=row('Model',node.model);
-  if(node.version) h+=row('Firmware',`<span class="${node.fwWarning?'amber':''}">${node.version}</span>`);
+  if(node.model) h+=row('Model',safeText(node.model));
+  if(node.version) h+=row('Firmware',`<span class="${node.fwWarning?'amber':''}">${safeText(node.version)}</span>`);
   if(node.cpu) h+=row('CPU',node.cpu+'%',parseFloat(node.cpu)>80?'red':parseFloat(node.cpu)>60?'amber':'green');
   if(node.mem) h+=row('Mem',node.mem+'%',parseFloat(node.mem)>85?'red':parseFloat(node.mem)>70?'amber':'');
   if(node.isStpRoot) h+=row('STP','Root Bridge','green');
@@ -637,15 +640,15 @@ function openPanel(node){
   }
   if(node.ssids&&node.ssids.length){
     h+=`<div class="detail-section"><div class="detail-section-title">SSIDs</div>`;
-    node.ssids.forEach(s=>h+=`<div class="detail-row"><div class="detail-val" style="color:var(--cyan);text-align:left">${s}</div></div>`);
+    node.ssids.forEach(s=>h+=`<div class="detail-row"><div class="detail-val" style="color:var(--cyan);text-align:left">${safeText(s)}</div></div>`);
     h+=`</div>`;
   }
-  if(node.notes) h+=`<div class="detail-section"><div class="detail-section-title">Notes</div><div style="font-size:11px;color:var(--text2);line-height:1.6">${node.notes}</div></div>`;
+  if(node.notes) h+=`<div class="detail-section"><div class="detail-section-title">Notes</div><div style="font-size:11px;color:var(--text2);line-height:1.6">${safeText(node.notes)}</div></div>`;
   document.getElementById('panel-body').innerHTML=h;
 }
 
 function row(label,val,cls=''){
-  return`<div class="detail-row"><div class="detail-key">${label}</div><div class="detail-val ${cls}">${val}</div></div>`;
+  return`<div class="detail-row"><div class="detail-key">${safeText(label)}</div><div class="detail-val ${safeAttr(cls)}">${val}</div></div>`;
 }
 
 function renderPortMap(pm){
@@ -659,7 +662,7 @@ function renderPortMap(pm){
     const bg=c?(c.isUplink?uc:(tc[c.type]||'rgba(107,154,191,.3)')):'var(--surface2)';
     const bd=c?'transparent':'var(--border)';
     const co=c?'var(--text)':'var(--text3)';
-    h+=`<div class="port-cell" style="background:${bg};border:1px solid ${bd};color:${co}" title="Port ${i}${c?': '+c.name+(c.isUplink?' (uplink)':''):'': ''}">${i}</div>`;
+    h+=`<div class="port-cell" style="background:${bg};border:1px solid ${bd};color:${co}" title="Port ${i}${c?': '+safeAttr(c.name)+(c.isUplink?' (uplink)':''):'': ''}">${i}</div>`;
   }
   h+=`</div><div class="port-legend">`;
   [['AP',tc.ap],['Switch',tc.switch],['Uplink',uc],['VoIP',tc.voip],['Cam',tc['cam-switch']],['Svr',tc.server]].forEach(([l,c])=>h+=`<div class="port-legend-item"><div class="port-legend-dot" style="background:${c}"></div>${l}</div>`);
@@ -673,10 +676,9 @@ function closePanel(){
 }
 
 function copyText(txt,el){
-  navigator.clipboard?.writeText(txt).then(()=>{
-    const orig=el.textContent; el.textContent='copied!'; el.style.color='var(--green)';
-    setTimeout(()=>{el.textContent=orig;el.style.color='';},1200);
-  });
+  const done=()=>{const orig=el.textContent; el.textContent='copied!'; el.style.color='var(--green)'; setTimeout(()=>{el.textContent=orig;el.style.color='';},1200);};
+  const fail=()=>{el.textContent='copy failed'; el.style.color='var(--red)'; setTimeout(()=>{el.textContent=txt;el.style.color='';},1200);};
+  if(navigator.clipboard?.writeText){navigator.clipboard.writeText(txt).then(done).catch(fail);}else{fail();}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -684,27 +686,26 @@ function copyText(txt,el){
 // ═══════════════════════════════════════════════════════
 function openEditMode(id){
   const node=NODES.find(n=>n.id===id); if(!node) return;
-  const statusOpts=['online','offline'].map(s=>`<option value="${s}"${node.status===s?' selected':''}>${s}</option>`).join('');
-  const typeOpts=['ap','switch','router','voip','server','cam-switch','isp'].map(t=>`<option value="${t}"${node.type===t?' selected':''}>${t}</option>`).join('');
-  const ssidStr=(node.ssids||[]).join(', ');
-  const notesSafe=(node.notes||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
+  const statusOpts=['online','offline'].map(s=>`<option value="${safeAttr(s)}"${node.status===s?' selected':''}>${safeText(s)}</option>`).join('');
+  const typeOpts=['ap','switch','router','voip','server','cam-switch','isp'].map(t=>`<option value="${safeAttr(t)}"${node.type===t?' selected':''}>${safeText(t)}</option>`).join('');
+  const ssidStr=safeAttr((node.ssids||[]).join(', '));
+  const notesSafe=safeText(node.notes||'');
   const h=`
   <div style="font-size:11px;color:var(--text3);margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:4px;border:1px solid var(--border)">
-    Editing: <span style="color:var(--text)">${node.name}</span> &nbsp;·&nbsp; ID: <span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">${node.id}</span>
+    Editing: <span style="color:var(--text)">${safeText(node.name)}</span> &nbsp;·&nbsp; ID: <span style="color:var(--cyan);font-family:'JetBrains Mono',monospace">${safeText(node.id)}</span>
   </div>
-  <div class="edit-field"><label>Name</label><input id="ef-name" value="${node.name.replace(/"/g,'&quot;')}"></div>
+  <div class="edit-field"><label>Name</label><input id="ef-name" value="${safeAttr(node.name)}"></div>
   <div class="edit-field"><label>Type</label><select id="ef-type">${typeOpts}</select></div>
   <div class="edit-field"><label>Status</label><select id="ef-status">${statusOpts}</select></div>
-  <div class="edit-field"><label>IP Address</label><input id="ef-ip" value="${node.ip||''}"></div>
-  <div class="edit-field"><label>MAC Address</label><input id="ef-mac" value="${node.mac||''}"></div>
-  <div class="edit-field"><label>Model</label><input id="ef-model" value="${(node.model||'').replace(/"/g,'&quot;')}"></div>
-  <div class="edit-field"><label>Firmware</label><input id="ef-version" value="${node.version||''}"></div>
-  <div class="edit-field"><label>2.4 GHz Ch</label><input id="ef-ch24" value="${node.ch24||''}"></div>
-  <div class="edit-field"><label>5 GHz Ch</label><input id="ef-ch5" value="${node.ch5||''}"></div>
+  <div class="edit-field"><label>IP Address</label><input id="ef-ip" value="${safeAttr(node.ip||'')}"></div>
+  <div class="edit-field"><label>MAC Address</label><input id="ef-mac" value="${safeAttr(node.mac||'')}"></div>
+  <div class="edit-field"><label>Model</label><input id="ef-model" value="${safeAttr(node.model||'')}"></div>
+  <div class="edit-field"><label>Firmware</label><input id="ef-version" value="${safeAttr(node.version||'')}"></div>
+  <div class="edit-field"><label>2.4 GHz Ch</label><input id="ef-ch24" value="${safeAttr(node.ch24||'')}"></div>
+  <div class="edit-field"><label>5 GHz Ch</label><input id="ef-ch5" value="${safeAttr(node.ch5||'')}"></div>
   <div class="edit-field"><label>SSIDs (comma separated)</label><input id="ef-ssids" value="${ssidStr}"></div>
-  <div class="edit-field"><label>Uplink Device</label><input id="ef-uplink" value="${node.uplink||''}"></div>
-  <div class="edit-field"><label>Uplink Port</label><input id="ef-uplinkPort" value="${node.uplinkPort||''}"></div>
+  <div class="edit-field"><label>Uplink Device</label><input id="ef-uplink" value="${safeAttr(node.uplink||'')}"></div>
+  <div class="edit-field"><label>Uplink Port</label><input id="ef-uplinkPort" value="${safeAttr(node.uplinkPort||'')}"></div>
   <div class="edit-field"><label>Notes</label><textarea id="ef-notes" rows="5">${notesSafe}</textarea></div>
   <div class="edit-actions">
     <button class="edit-btn-save" onclick="saveNodeEdit('${node.id}')">Save Changes</button>
@@ -770,7 +771,7 @@ function redraw(){
 
 function showToast(msg){
   const t=document.getElementById('save-toast');
-  t.textContent='✓ '+msg; t.classList.add('show');
+  t.textContent='✓ '+String(msg||'Saved'); t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2000);
 }
 
@@ -779,7 +780,7 @@ function showToast(msg){
 // ═══════════════════════════════════════════════════════
 function showAddDevice(){
   const sel=document.getElementById('ad-uplink-sel');
-  sel.innerHTML=NODES.map(n=>`<option value="${n.name}">${n.name}</option>`).join('');
+  sel.innerHTML=NODES.map(n=>`<option value="${safeAttr(n.name)}">${safeText(n.name)}</option>`).join('');
   document.getElementById('add-modal').classList.remove('hidden');
 }
 function hideAddDevice(){ document.getElementById('add-modal').classList.add('hidden'); }
@@ -904,7 +905,7 @@ function hideTT(){tooltip.style.display='none';}
 // ═══════════════════════════════════════════════════════
 function showIssues(){
   const sl={high:'sev-high',medium:'sev-med',low:'sev-low'},sb={high:'HIGH',medium:'MED',low:'LOW'};
-  let h=OPEN_ISSUES.map(i=>`<div class="issue-card ${i.sev}"><div class="issue-hdr"><span class="sev-badge ${sl[i.sev]}">${sb[i.sev]}</span><div class="issue-title">${i.title}</div></div><div class="issue-device">${i.device}</div><div class="issue-desc">${i.desc}</div><div class="issue-action">${i.action}</div></div>`).join('');
+  let h=OPEN_ISSUES.map(i=>`<div class="issue-card ${safeAttr(i.sev)}"><div class="issue-hdr"><span class="sev-badge ${sl[i.sev]}">${sb[i.sev]}</span><div class="issue-title">${safeText(i.title)}</div></div><div class="issue-device">${safeText(i.device)}</div><div class="issue-desc">${safeText(i.desc)}</div><div class="issue-action">${safeText(i.action)}</div></div>`).join('');
   h+=`<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:13px"><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">📡 SSID Reference</div>
   <table class="ssid-table"><thead><tr><th>SSID</th><th>Security</th><th>Scope</th><th>Notes</th></tr></thead><tbody>
   <tr><td class="ssid-name">Leaders</td><td>WPA2</td><td>All APs</td><td>Staff/leadership</td></tr>
@@ -1014,8 +1015,9 @@ function exportToWord(){
 //  INIT
 // ═══════════════════════════════════════════════════════
 function fixH(){const h=window.visualViewport?window.visualViewport.height:window.innerHeight;document.getElementById('app').style.height=h+'px';}
+function debounce(fn,delay=150){let timer;return(...args)=>{clearTimeout(timer);timer=setTimeout(()=>fn(...args),delay);};}
 fixH();
-window.addEventListener('resize',()=>{fixH();initSVG();});
+window.addEventListener('resize',debounce(()=>{fixH();initSVG();},150));
 window.visualViewport?.addEventListener('resize',fixH);
 window.addEventListener('load',initSVG);
 toggleAPFields();
