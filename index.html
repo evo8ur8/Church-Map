@@ -182,7 +182,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div id="header-actions">
     <button class="btn btn-issues" onclick="showIssues()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Issues <span id="issue-badge" style="background:rgba(248,113,113,.25);border:1px solid rgba(248,113,113,.4);border-radius:3px;padding:0 5px;font-size:10px;color:var(--red);margin-left:2px">10</span>
+      Issues <span id="issue-badge" style="background:rgba(248,113,113,.25);border:1px solid rgba(248,113,113,.4);border-radius:3px;padding:0 5px;font-size:10px;color:var(--red);margin-left:2px">9</span>
     </button>
     <button class="btn btn-add" onclick="showAddDevice()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
@@ -336,973 +336,68 @@ let DATA_STAMP = 'Jul 2 2026';
 
 // @@NODES_BEGIN@@
 const NODES = [
-  {
-    "id": "isp",
-    "name": "Antietam Broadband",
-    "type": "isp",
-    "status": "online",
-    "ip": "24.235.81.138",
-    "model": "WAN · ASN 14291",
-    "mac": "e0:00:00:00:01:51",
-    "notes": "10 GbE SFP+ WAN · ISP gateway 24.235.81.137",
-    "_y": 60,
-    "_x": 919.5
-  },
-  {
-    "id": "router",
-    "name": "Experience Gateway Edge Router",
-    "type": "router",
-    "status": "online",
-    "ip": "10.0.0.1",
-    "model": "UDM-SE (UDMPROSE)",
-    "mac": "6c:63:f8:9f:88:51",
-    "version": "5.1.19.33549",
-    "cpu": "9.2",
-    "mem": "61.7",
-    "uplink": "Antietam Broadband",
-    "uplinkPort": "SFP+ 2 (eth10)",
-    "uplinkSpeed": "10 GbE",
-    "portMap": {
-      "total": 11,
-      "connections": {
-        "1": {
-          "name": "SW2",
-          "type": "switch"
-        },
-        "2": {
-          "name": "SW4a",
-          "type": "switch"
-        },
-        "3": {
-          "name": "SW1",
-          "type": "switch"
-        },
-        "5": {
-          "name": "Office Hallway AP",
-          "type": "ap"
-        },
-        "11": {
-          "name": "WAN · Antietam",
-          "type": "isp",
-          "isUplink": true
-        }
-      }
-    },
-    "notes": "UDM-SE · UniFi 10.4.57 · Last reboot Jun 19 2026 · SW4a on Port 2 (moved Jul 2026)",
-    "_y": 155,
-    "_x": 919.5,
-    "fpx": 900,
-    "fpy": 625
-  },
-  {
-    "id": "sw1",
-    "name": "USW-48-PoE",
-    "type": "switch",
-    "status": "online",
-    "ip": "10.0.0.3",
-    "model": "USW-48-PoE (USL48PB)",
-    "mac": "58:d6:1f:25:27:e8",
-    "cpu": "15.8",
-    "mem": "37.6",
-    "isStpRoot": true,
-    "uplink": "UDM-SE",
-    "uplinkPort": "Port 47 → Router Port 3",
-    "uplinkSpeed": "GbE",
-    "portMap": {
-      "total": 48,
-      "connections": {
-        "3": {
-          "name": "Main Lobby AP",
-          "type": "ap"
-        },
-        "4": {
-          "name": "Conf Room AP",
-          "type": "ap"
-        },
-        "10": {
-          "name": "Choir Room AP",
-          "type": "ap"
-        },
-        "11": {
-          "name": "Generic Printer",
-          "type": "other"
-        },
-        "13": {
-          "name": "Yealink SIP-T77U",
-          "type": "voip"
-        },
-        "23": {
-          "name": "Grandstream GRP2614",
-          "type": "voip"
-        },
-        "27": {
-          "name": "Pastor Rodney's AP",
-          "type": "ap"
-        },
-        "47": {
-          "name": "UDM-SE (uplink)",
-          "type": "router",
-          "isUplink": true
-        }
-      }
-    },
-    "notes": "SW1 · STP Root · Port 2 now free (SW4a moved to UDM-SE Jul 2026)",
-    "_y": 265,
-    "_x": 960,
-    "fpx": 875,
-    "fpy": 645
-  },
-  {
-    "id": "sw2",
-    "name": "Media Room-48-PoE",
-    "type": "switch",
-    "status": "online",
-    "ip": "10.0.0.2",
-    "model": "USW-48-PoE (USL48PB)",
-    "mac": "58:d6:1f:44:f6:78",
-    "cpu": "15.9",
-    "mem": "36.8",
-    "uplink": "UDM-SE",
-    "uplinkPort": "Port 7 → Router Port 1",
-    "uplinkSpeed": "GbE",
-    "portMap": {
-      "total": 48,
-      "connections": {
-        "3": {
-          "name": "Sound Booth AP",
-          "type": "ap"
-        },
-        "5": {
-          "name": "AC Pro AP",
-          "type": "ap"
-        },
-        "6": {
-          "name": "Youth Room AP",
-          "type": "ap"
-        },
-        "7": {
-          "name": "UDM-SE (uplink)",
-          "type": "router",
-          "isUplink": true
-        },
-        "8": {
-          "name": "Stage Right AP",
-          "type": "ap"
-        },
-        "13": {
-          "name": "Security Office AP",
-          "type": "ap"
-        }
-      }
-    },
-    "notes": "SW2 · Media Room · 48-port PoE",
-    "_y": 265,
-    "_x": 555,
-    "fpx": 893,
-    "fpy": 340
-  },
-  {
-    "id": "sw4a",
-    "name": "USW-Lite-8-PoE (SW4a)",
-    "type": "switch",
-    "status": "online",
-    "ip": "10.0.0.237",
-    "model": "USW-Lite-8-PoE (USL8LPB)",
-    "mac": "58:d6:1f:60:bc:d4",
-    "cpu": "5.4",
-    "mem": "36.8",
-    "uplink": "UDM-SE",
-    "uplinkPort": "Port 1 → Router Port 2",
-    "uplinkSpeed": "GbE",
-    "portMap": {
-      "total": 8,
-      "connections": {
-        "1": {
-          "name": "UDM-SE (uplink)",
-          "type": "router",
-          "isUplink": true
-        },
-        "2": {
-          "name": "SW3",
-          "type": "switch"
-        },
-        "3": {
-          "name": "Chapel AP",
-          "type": "ap"
-        }
-      }
-    },
-    "notes": "SW4a · Uplink moved from SW1 Port 2 to UDM-SE Port 2 (Jul 2026)",
-    "_y": 265,
-    "_x": 1446,
-    "fpx": 870,
-    "fpy": 665
-  },
-  {
-    "id": "sw3",
-    "name": "USW-Lite-16-PoE",
-    "type": "switch",
-    "status": "online",
-    "ip": "10.0.0.20",
-    "model": "USW-Lite-16-PoE (USL16LPB)",
-    "mac": "58:d6:1f:8d:bb:88",
-    "cpu": "12.4",
-    "mem": "37.0",
-    "uplink": "SW4a",
-    "uplinkPort": "Port 6 → SW4a Port 2",
-    "uplinkSpeed": "GbE",
-    "portMap": {
-      "total": 16,
-      "connections": {
-        "1": {
-          "name": "Reolink Camera",
-          "type": "other"
-        },
-        "2": {
-          "name": "Gym/Kitchen AP",
-          "type": "ap"
-        },
-        "3": {
-          "name": "Reolink Camera",
-          "type": "other"
-        },
-        "5": {
-          "name": "SW4b",
-          "type": "switch"
-        },
-        "6": {
-          "name": "SW4a (uplink)",
-          "type": "switch",
-          "isUplink": true
-        },
-        "7": {
-          "name": "Kidz Zone AP",
-          "type": "ap"
-        },
-        "8": {
-          "name": "Cisco Camera Switch",
-          "type": "cam-switch"
-        }
-      }
-    },
-    "notes": "SW3 · Replaced rogue Cisco switch (Jun 2026)",
-    "_y": 488,
-    "_x": 1527,
-    "fpx": 880,
-    "fpy": 685
-  },
-  {
-    "id": "sw4b",
-    "name": "USW-Lite-8-PoE (SW4b)",
-    "type": "switch",
-    "status": "online",
-    "ip": "10.0.0.19",
-    "model": "USW-Lite-8-PoE (USL8LPB)",
-    "mac": "58:d6:1f:60:86:f5",
-    "cpu": "5.9",
-    "mem": "36.7",
-    "uplink": "SW3",
-    "uplinkPort": "Port 8 → SW3 Port 5",
-    "uplinkSpeed": "GbE",
-    "portMap": {
-      "total": 8,
-      "connections": {
-        "1": {
-          "name": "Yealink SIP-T77U #1",
-          "type": "voip"
-        },
-        "2": {
-          "name": "Yealink SIP-T77U #2",
-          "type": "voip"
-        },
-        "3": {
-          "name": "LC near Gym AP",
-          "type": "ap"
-        },
-        "4": {
-          "name": "LC near Kitchen AP",
-          "type": "ap"
-        },
-        "7": {
-          "name": "ASUS VMS Server",
-          "type": "server"
-        },
-        "8": {
-          "name": "SW3 (uplink)",
-          "type": "switch",
-          "isUplink": true
-        }
-      }
-    },
-    "notes": "SW4b · Learning Center wing · Uplink on Port 8",
-    "_y": 594,
-    "_x": 1527,
-    "fpx": 870,
-    "fpy": 705
-  },
-  {
-    "id": "ap-office",
-    "name": "Office Hallway",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.8",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7c:36:ba",
-    "version": "8.6.11",
-    "uplink": "UDM-SE",
-    "uplinkPort": "Port 5",
-    "uplinkSpeed": "GbE",
-    "ch24": "6 (20 MHz)",
-    "ch5": "44 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Direct router connection — wiring closet area",
-    "_y": 265,
-    "_x": 1729.5,
-    "fpx": 395,
-    "fpy": 615
-  },
-  {
-    "id": "ap-lobby",
-    "name": "Main Lobby",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.13",
-    "model": "U7 LR v2 (UAPA6B3)",
-    "mac": "84:78:48:c0:3b:73",
-    "version": "8.0.64",
-    "uplink": "SW1",
-    "uplinkPort": "Port 3",
-    "uplinkSpeed": "GbE",
-    "ch24": "11 (20 MHz)",
-    "ch5": "36 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Main lobby coverage",
-    "_y": 382,
-    "_x": 1081.5,
-    "fpx": 310,
-    "fpy": 47
-  },
-  {
-    "id": "ap-conf",
-    "name": "Conference Room",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.9",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7a:8a:1b",
-    "version": "8.6.11",
-    "uplink": "SW1",
-    "uplinkPort": "Port 4",
-    "uplinkSpeed": "GbE",
-    "ch24": "11 (20 MHz)",
-    "ch5": "40 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Conference room coverage",
-    "_y": 382,
-    "_x": 1000.5,
-    "fpx": 105,
-    "fpy": 180
-  },
-  {
-    "id": "ap-choir",
-    "name": "Choir Room",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.5",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7a:b3:52",
-    "version": "8.6.11",
-    "uplink": "SW1",
-    "uplinkPort": "Port 10",
-    "uplinkSpeed": "GbE",
-    "ch24": "6 (20 MHz)",
-    "ch5": "48 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "⚠ 5 GHz interference from nearby AC Pro (-89 dBm)",
-    "_y": 382,
-    "_x": 919.5,
-    "fpx": 105,
-    "fpy": 362
-  },
-  {
-    "id": "ap-pastor",
-    "name": "Pastor Rodney's Office",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.4",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7a:89:22",
-    "version": "8.6.11",
-    "uplink": "SW1",
-    "uplinkPort": "Port 27",
-    "uplinkSpeed": "GbE",
-    "ch24": "11 (20 MHz)",
-    "ch5": "40 (40 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Low tx power — low profile placement",
-    "_y": 382,
-    "_x": 838.5,
-    "fpx": 105,
-    "fpy": 515
-  },
-  {
-    "id": "ap-chapel",
-    "name": "Chapel",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.12",
-    "model": "U7 LR v2 (UAPA6B3)",
-    "mac": "84:78:48:c0:4e:ba",
-    "version": "8.0.64",
-    "uplink": "SW4a",
-    "uplinkPort": "Port 3",
-    "uplinkSpeed": "GbE",
-    "ch24": "11 (20 MHz)",
-    "ch5": "48 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Chapel main coverage — hangs off SW4a (10.0.0.237)",
-    "_y": 382,
-    "_x": 1446,
-    "fpx": 425,
-    "fpy": 330
-  },
-  {
-    "id": "ap-sound",
-    "name": "Sound Booth",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.10",
-    "model": "U7 LR v2 (UAPA6B3)",
-    "mac": "84:78:48:c0:4e:bd",
-    "version": "8.0.64",
-    "uplink": "SW2",
-    "uplinkPort": "Port 3",
-    "uplinkSpeed": "GbE",
-    "ch24": "1 (20 MHz)",
-    "ch5": "36 (80 MHz)",
-    "ssids": [
-      "ExperienceMedia",
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "ExperienceMedia SSID exclusive to this AP for AV equipment",
-    "_y": 382,
-    "_x": 433.5,
-    "fpx": 727,
-    "fpy": 162
-  },
-  {
-    "id": "ap-youth",
-    "name": "Youth Room",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.7",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7a:b3:af",
-    "version": "8.6.11",
-    "uplink": "SW2",
-    "uplinkPort": "Port 6",
-    "uplinkSpeed": "GbE",
-    "ch24": "1 (20 MHz)",
-    "ch5": "48 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Youth room — desk placement",
-    "_y": 382,
-    "_x": 352.5,
-    "fpx": 727,
-    "fpy": 347
-  },
-  {
-    "id": "ap-acpro",
-    "name": "AC Pro",
-    "type": "ap",
-    "status": "online",
-    "fwWarning": true,
-    "ip": "10.0.0.21",
-    "model": "U7PG2 — FW 6.8.2 ⚠",
-    "mac": "fc:ec:da:f0:e5:c1",
-    "version": "6.8.2",
-    "uplink": "SW2",
-    "uplinkPort": "Port 5",
-    "uplinkSpeed": "GbE",
-    "ch24": "11 (20 MHz)",
-    "ch5": "48 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "⚠ OUTDATED FIRMWARE. Causing 5 GHz interference at choir room (-89 dBm). Replace or adopt.",
-    "_y": 382,
-    "_x": 595.5,
-    "fpx": 590,
-    "fpy": 47
-  },
-  {
-    "id": "ap-stage",
-    "name": "Stage Right",
-    "type": "ap",
-    "status": "online",
-    "fwWarning": true,
-    "ip": "10.0.0.18",
-    "model": "U7PG2 — FW 6.8.2 ⚠",
-    "mac": "fc:ec:da:f0:e7:64",
-    "version": "6.8.2",
-    "uplink": "SW2",
-    "uplinkPort": "Port 8",
-    "uplinkSpeed": "GbE",
-    "ch24": "6 (20 MHz)",
-    "ch5": "44 (40 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "⚠ OUTDATED FIRMWARE (6.8.2). Top of wall, stage right.",
-    "_y": 382,
-    "_x": 514.5,
-    "fpx": 897,
-    "fpy": 162
-  },
-  {
-    "id": "ap-security",
-    "name": "Security Office",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.15",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7a:88:d4",
-    "version": "8.6.11",
-    "uplink": "SW2",
-    "uplinkPort": "Port 13",
-    "uplinkSpeed": "GbE",
-    "ch24": "1 (20 MHz)",
-    "ch5": "44 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Restored online Jul 2 2026. Uplink confirmed SW2 Port 13.",
-    "_y": 382,
-    "_x": 676.5,
-    "fpx": 727,
-    "fpy": 517
-  },
-  {
-    "id": "ap-gym",
-    "name": "Gym / Kitchen",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.11",
-    "model": "U7 LR v2 (UAPA6B3)",
-    "mac": "84:78:48:c0:4e:84",
-    "version": "8.0.64",
-    "uplink": "SW3",
-    "uplinkPort": "Port 2",
-    "uplinkSpeed": "GbE",
-    "ch24": "11 (20 MHz)",
-    "ch5": "44 (80 MHz)",
-    "ssids": [
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Gym and kitchen coverage area",
-    "_y": 594,
-    "_x": 1405.5,
-    "fpx": 350,
-    "fpy": 700
-  },
-  {
-    "id": "ap-kidz",
-    "name": "Kidz Zone",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.6",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7a:b4:00",
-    "version": "8.6.11",
-    "uplink": "SW3",
-    "uplinkPort": "Port 7",
-    "uplinkSpeed": "GbE",
-    "ch24": "6 (20 MHz)",
-    "ch5": "36 (80 MHz)",
-    "ssids": [
-      "Learning Center",
-      "Leaders",
-      "ExperienceGateway"
-    ],
-    "notes": "Kidz Zone — Learning Center SSID active",
-    "_y": 594,
-    "_x": 1486.5,
-    "fpx": 735,
-    "fpy": 710
-  },
-  {
-    "id": "ap-lc",
-    "name": "Learning Center (Offline)",
-    "type": "ap",
-    "status": "offline",
-    "ip": "10.0.0.14",
-    "model": "U7 LR v2 (UAPA6B3)",
-    "mac": "84:78:48:c0:4c:02",
-    "version": "8.0.64",
-    "uplink": "SW3",
-    "uplinkPort": "Port ?",
-    "uplinkSpeed": "GbE",
-    "ch24": "6 (20 MHz)",
-    "ch5": "48 (80 MHz)",
-    "ssids": [
-      "Learning Center",
-      "Leaders"
-    ],
-    "notes": "⚠ OFFLINE — physically unmounted. Candidate for classroom redeployment.",
-    "_y": 594,
-    "_x": 1567.5,
-    "fpx": 875,
-    "fpy": 625
-  },
-  {
-    "id": "ap-lcgym",
-    "name": "LC near Gym",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.16",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7a:89:df",
-    "version": "8.6.11",
-    "uplink": "SW4b",
-    "uplinkPort": "Port 3",
-    "uplinkSpeed": "GbE",
-    "ch24": "1 (20 MHz)",
-    "ch5": "40 (80 MHz)",
-    "ssids": [
-      "Learning Center",
-      "Leaders"
-    ],
-    "notes": "New install — ceiling mounted, LC wing near gym",
-    "_y": 698,
-    "_x": 1365,
-    "fpx": 117,
-    "fpy": 795
-  },
-  {
-    "id": "ap-lckitchen",
-    "name": "LC near Kitchen",
-    "type": "ap",
-    "status": "online",
-    "ip": "10.0.0.17",
-    "model": "U7 Lite (UAPA693)",
-    "mac": "94:2a:6f:7c:74:b5",
-    "version": "8.6.11",
-    "uplink": "SW4b",
-    "uplinkPort": "Port 4",
-    "uplinkSpeed": "GbE",
-    "ch24": "6 (20 MHz)",
-    "ch5": "36 (80 MHz)",
-    "ssids": [
-      "Learning Center",
-      "Leaders"
-    ],
-    "notes": "New install — ceiling mounted, LC wing near kitchen",
-    "_y": 698,
-    "_x": 1446,
-    "fpx": 342,
-    "fpy": 795
-  },
-  {
-    "id": "voip-sw1",
-    "name": "Yealink SIP-T77U",
-    "type": "voip",
-    "status": "online",
-    "ip": "—",
-    "model": "Yealink SIP-T77U",
-    "mac": "c4:fc:22:0c:02:1a",
-    "uplink": "SW1",
-    "uplinkPort": "Port 13",
-    "uplinkSpeed": "GbE",
-    "notes": "⚠ SIP failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.",
-    "_y": 382,
-    "_x": 1162.5,
-    "fpx": 105,
-    "fpy": 590
-  },
-  {
-    "id": "grandstream",
-    "name": "Grandstream GRP2614",
-    "type": "voip",
-    "status": "online",
-    "ip": "—",
-    "model": "Grandstream GRP2614",
-    "mac": "ec:74:d7:71:fb:45",
-    "uplink": "SW1",
-    "uplinkPort": "Port 23",
-    "uplinkSpeed": "GbE",
-    "notes": "⚠ Room location unknown — confirm on next visit.",
-    "_y": 382,
-    "_x": 1243.5,
-    "fpx": 210,
-    "fpy": 590
-  },
-  {
-    "id": "voip-b1",
-    "name": "Yealink SIP-T77U #1",
-    "type": "voip",
-    "status": "online",
-    "ip": "—",
-    "model": "Yealink SIP-T77U",
-    "mac": "c4:fc:22:0c:fe:78",
-    "uplink": "SW4b",
-    "uplinkPort": "Port 1",
-    "uplinkSpeed": "GbE",
-    "notes": "⚠ SIP failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.",
-    "_y": 698,
-    "_x": 1527,
-    "fpx": 540,
-    "fpy": 795
-  },
-  {
-    "id": "voip-b2",
-    "name": "Yealink SIP-T77U #2",
-    "type": "voip",
-    "status": "online",
-    "ip": "—",
-    "model": "Yealink SIP-T77U",
-    "mac": "c4:fc:22:0c:02:46",
-    "uplink": "SW4b",
-    "uplinkPort": "Port 2",
-    "uplinkSpeed": "GbE",
-    "notes": "⚠ SIP failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.",
-    "_y": 698,
-    "_x": 1608,
-    "fpx": 580,
-    "fpy": 795
-  },
-  {
-    "id": "cisco-cam",
-    "name": "Cisco Camera Switch",
-    "type": "cam-switch",
-    "status": "online",
-    "ip": "—",
-    "model": "Cisco (unmanaged)",
-    "mac": "ec:1d:8b:ef:7a:34",
-    "uplink": "SW3",
-    "uplinkPort": "Port 8",
-    "uplinkSpeed": "GbE",
-    "notes": "⚠ 2 TB+ traffic. 35+ downstream devices (Hanwha/Axis/Reolink cameras + nested TP-Link switch). VLAN 50 recommended.",
-    "_y": 594,
-    "_x": 1648.5,
-    "fpx": 920,
-    "fpy": 700
-  },
-  {
-    "id": "vms-asus",
-    "name": "ASUS Vigil VMS Server",
-    "type": "server",
-    "status": "online",
-    "ip": "—",
-    "model": "ASUS Tek VMS",
-    "mac": "18:31:bf:52:4?:??",
-    "uplink": "SW4b",
-    "uplinkPort": "Port 7",
-    "uplinkSpeed": "GbE",
-    "notes": "⚠ 2.6 TB traffic. No recording configured. Synology NAS recommended.",
-    "_y": 698,
-    "_x": 1689,
-    "fpx": 900.1279907226562,
-    "fpy": 749.8720092773438
-  }
+  {id:'isp',name:'Antietam Broadband',type:'isp',status:'online',ip:'24.235.81.138',model:'WAN · ASN 14291',mac:'e0:00:00:00:01:51',notes:'10 GbE SFP+ WAN · ISP gateway 24.235.81.137'},
+  {id:'router',name:'Experience Gateway Edge Router',type:'router',status:'online',ip:'10.0.0.1',model:'UDM-SE (UDMPROSE)',mac:'6c:63:f8:9f:88:51',version:'5.1.19.33549',cpu:'9.2',mem:'61.7',uplink:'Antietam Broadband',uplinkPort:'SFP+ 2 (eth10)',uplinkSpeed:'10 GbE',portMap:{total:11,connections:{1:{name:'SW2',type:'switch'},2:{name:'SW4a',type:'switch'},3:{name:'SW1',type:'switch'},5:{name:'Office Hallway AP',type:'ap'},11:{name:'WAN · Antietam',type:'isp',isUplink:true}}},notes:'UDM-SE · UniFi 10.4.57 · Last reboot Jun 19 2026 · SW4a on Port 2 (moved Jul 2026)'},
+  {id:'sw1',name:'USW-48-PoE',type:'switch',status:'online',ip:'10.0.0.3',model:'USW-48-PoE (USL48PB)',mac:'58:d6:1f:25:27:e8',cpu:'15.8',mem:'37.6',isStpRoot:true,uplink:'UDM-SE',uplinkPort:'Port 47 → Router Port 3',uplinkSpeed:'GbE',portMap:{total:48,connections:{3:{name:'Main Lobby AP',type:'ap'},4:{name:'Conf Room AP',type:'ap'},10:{name:'Choir Room AP',type:'ap'},11:{name:'Generic Printer',type:'other'},13:{name:'Yealink SIP-T77U',type:'voip'},23:{name:'Grandstream GRP2614',type:'voip'},27:{name:"Pastor Rodney's AP",type:'ap'},47:{name:'UDM-SE (uplink)',type:'router',isUplink:true}}},notes:'SW1 · STP Root · Port 2 now free (SW4a moved to UDM-SE Jul 2026)'},
+  {id:'sw2',name:'Media Room-48-PoE',type:'switch',status:'online',ip:'10.0.0.2',model:'USW-48-PoE (USL48PB)',mac:'58:d6:1f:44:f6:78',cpu:'15.9',mem:'36.8',uplink:'UDM-SE',uplinkPort:'Port 7 → Router Port 1',uplinkSpeed:'GbE',portMap:{total:48,connections:{3:{name:'Sound Booth AP',type:'ap'},5:{name:'AC Pro AP',type:'ap'},6:{name:'Youth Room AP',type:'ap'},7:{name:'UDM-SE (uplink)',type:'router',isUplink:true},8:{name:'Stage Right AP',type:'ap'},13:{name:'Security Office AP',type:'ap'}}},notes:'SW2 · Media Room · 48-port PoE'},
+  {id:'sw4a',name:'USW-Lite-8-PoE (SW4a)',type:'switch',status:'online',ip:'10.0.0.237',model:'USW-Lite-8-PoE (USL8LPB)',mac:'58:d6:1f:60:bc:d4',cpu:'5.4',mem:'36.8',uplink:'UDM-SE',uplinkPort:'Port 1 → Router Port 2',uplinkSpeed:'GbE',portMap:{total:8,connections:{1:{name:'UDM-SE (uplink)',type:'router',isUplink:true},2:{name:'SW3',type:'switch'},3:{name:'Chapel AP',type:'ap'}}},notes:'SW4a · Uplink moved from SW1 Port 2 to UDM-SE Port 2 (Jul 2026)'},
+  {id:'sw3',name:'USW-Lite-16-PoE',type:'switch',status:'online',ip:'10.0.0.20',model:'USW-Lite-16-PoE (USL16LPB)',mac:'58:d6:1f:8d:bb:88',cpu:'12.4',mem:'37.0',uplink:'SW4a',uplinkPort:'Port 6 → SW4a Port 2',uplinkSpeed:'GbE',portMap:{total:16,connections:{1:{name:'Reolink Camera',type:'other'},2:{name:'Gym/Kitchen AP',type:'ap'},3:{name:'Reolink Camera',type:'other'},5:{name:'SW4b',type:'switch'},6:{name:'SW4a (uplink)',type:'switch',isUplink:true},7:{name:'Kidz Zone AP',type:'ap'},8:{name:'Cisco Camera Switch',type:'cam-switch'}}},notes:'SW3 · Replaced rogue Cisco switch (Jun 2026)'},
+  {id:'sw4b',name:'USW-Lite-8-PoE (SW4b)',type:'switch',status:'online',ip:'10.0.0.19',model:'USW-Lite-8-PoE (USL8LPB)',mac:'58:d6:1f:60:86:f5',cpu:'5.9',mem:'36.7',uplink:'SW3',uplinkPort:'Port 8 → SW3 Port 5',uplinkSpeed:'GbE',portMap:{total:8,connections:{1:{name:'Yealink SIP-T77U #1',type:'voip'},2:{name:'Yealink SIP-T77U #2',type:'voip'},3:{name:'LC near Gym AP',type:'ap'},4:{name:'LC near Kitchen AP',type:'ap'},7:{name:'ASUS VMS Server',type:'server'},8:{name:'SW3 (uplink)',type:'switch',isUplink:true}}},notes:'SW4b · Learning Center wing · Uplink on Port 8'},
+  {id:'ap-office',name:'Office Hallway',type:'ap',status:'online',ip:'10.0.0.8',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7c:36:ba',version:'8.6.11',uplink:'UDM-SE',uplinkPort:'Port 5',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'44 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Direct router connection — wiring closet area'},
+  {id:'ap-lobby',name:'Main Lobby',type:'ap',status:'online',ip:'10.0.0.13',model:'U7 LR v2 (UAPA6B3)',mac:'84:78:48:c0:3b:73',version:'8.0.64',uplink:'SW1',uplinkPort:'Port 3',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'36 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Main lobby coverage'},
+  {id:'ap-conf',name:'Conference Room',type:'ap',status:'online',ip:'10.0.0.9',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7a:8a:1b',version:'8.6.11',uplink:'SW1',uplinkPort:'Port 4',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'40 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Conference room coverage'},
+  {id:'ap-choir',name:'Choir Room',type:'ap',status:'online',ip:'10.0.0.5',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7a:b3:52',version:'8.6.11',uplink:'SW1',uplinkPort:'Port 10',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'⚠ 5 GHz interference from nearby AC Pro (-89 dBm)'},
+  {id:'ap-pastor',name:"Pastor Rodney's Office",type:'ap',status:'online',ip:'10.0.0.4',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7a:89:22',version:'8.6.11',uplink:'SW1',uplinkPort:'Port 27',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'40 (40 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Low tx power — low profile placement'},
+  {id:'ap-chapel',name:'Chapel',type:'ap',status:'online',ip:'10.0.0.12',model:'U7 LR v2 (UAPA6B3)',mac:'84:78:48:c0:4e:ba',version:'8.0.64',uplink:'SW4a',uplinkPort:'Port 3',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Chapel main coverage — hangs off SW4a (10.0.0.237)'},
+  {id:'ap-sound',name:'Sound Booth',type:'ap',status:'online',ip:'10.0.0.10',model:'U7 LR v2 (UAPA6B3)',mac:'84:78:48:c0:4e:bd',version:'8.0.64',uplink:'SW2',uplinkPort:'Port 3',uplinkSpeed:'GbE',ch24:'1 (20 MHz)',ch5:'36 (80 MHz)',ssids:['ExperienceMedia','Leaders','ExperienceGateway'],notes:'ExperienceMedia SSID exclusive to this AP for AV equipment'},
+  {id:'ap-youth',name:'Youth Room',type:'ap',status:'online',ip:'10.0.0.7',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7a:b3:af',version:'8.6.11',uplink:'SW2',uplinkPort:'Port 6',uplinkSpeed:'GbE',ch24:'1 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Youth room — desk placement'},
+  {id:'ap-acpro',name:'AC Pro',type:'ap',status:'online',fwWarning:true,ip:'10.0.0.21',model:'U7PG2 — FW 6.8.2 ⚠',mac:'fc:ec:da:f0:e5:c1',version:'6.8.2',uplink:'SW2',uplinkPort:'Port 5',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'⚠ OUTDATED FIRMWARE. Causing 5 GHz interference at choir room (-89 dBm). Replace or adopt.'},
+  {id:'ap-stage',name:'Stage Right',type:'ap',status:'online',fwWarning:true,ip:'10.0.0.18',model:'U7PG2 — FW 6.8.2 ⚠',mac:'fc:ec:da:f0:e7:64',version:'6.8.2',uplink:'SW2',uplinkPort:'Port 8',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'44 (40 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'⚠ OUTDATED FIRMWARE (6.8.2). Top of wall, stage right.'},
+  {id:'ap-security',name:'Security Office',type:'ap',status:'online',ip:'10.0.0.15',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7a:88:d4',version:'8.6.11',uplink:'SW2',uplinkPort:'Port 13',uplinkSpeed:'GbE',ch24:'1 (20 MHz)',ch5:'44 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Restored online Jul 2 2026. Uplink confirmed SW2 Port 13.'},
+  {id:'ap-gym',name:'Gym / Kitchen',type:'ap',status:'online',ip:'10.0.0.11',model:'U7 LR v2 (UAPA6B3)',mac:'84:78:48:c0:4e:84',version:'8.0.64',uplink:'SW3',uplinkPort:'Port 2',uplinkSpeed:'GbE',ch24:'11 (20 MHz)',ch5:'44 (80 MHz)',ssids:['Leaders','ExperienceGateway'],notes:'Gym and kitchen coverage area'},
+  {id:'ap-kidz',name:'Kidz Zone',type:'ap',status:'online',ip:'10.0.0.6',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7a:b4:00',version:'8.6.11',uplink:'SW3',uplinkPort:'Port 7',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'36 (80 MHz)',ssids:['Learning Center','Leaders','ExperienceGateway'],notes:'Kidz Zone — Learning Center SSID active'},
+  {id:'ap-lc',name:'Learning Center (Offline)',type:'ap',status:'offline',ip:'10.0.0.14',model:'U7 LR v2 (UAPA6B3)',mac:'84:78:48:c0:4c:02',version:'8.0.64',uplink:'SW3',uplinkPort:'Port ?',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'48 (80 MHz)',ssids:['Learning Center','Leaders'],notes:'⚠ OFFLINE — physically unmounted. Candidate for classroom redeployment.'},
+  {id:'ap-lcgym',name:'LC near Gym',type:'ap',status:'online',ip:'10.0.0.16',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7a:89:df',version:'8.6.11',uplink:'SW4b',uplinkPort:'Port 3',uplinkSpeed:'GbE',ch24:'1 (20 MHz)',ch5:'40 (80 MHz)',ssids:['Learning Center','Leaders'],notes:'Centrally positioned between two classrooms. Strong enough signal to cover both adjacent classrooms plus the open area. Coverage confirmed adequate — no additional APs needed for this zone.'},
+  {id:'ap-lckitchen',name:'LC near Kitchen',type:'ap',status:'online',ip:'10.0.0.17',model:'U7 Lite (UAPA693)',mac:'94:2a:6f:7c:74:b5',version:'8.6.11',uplink:'SW4b',uplinkPort:'Port 4',uplinkSpeed:'GbE',ch24:'6 (20 MHz)',ch5:'36 (80 MHz)',ssids:['Learning Center','Leaders'],notes:'Centrally positioned between two classrooms. Strong enough signal to cover both adjacent classrooms plus the open area. Coverage confirmed adequate — no additional APs needed for this zone.'},
+  {id:'voip-sw1',name:'Yealink SIP-T77U',type:'voip',status:'online',ip:'—',model:'Yealink SIP-T77U',mac:'c4:fc:22:0c:02:1a',uplink:'SW1',uplinkPort:'Port 13',uplinkSpeed:'GbE',notes:'⚠ SIP failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.'},
+  {id:'grandstream',name:'Grandstream GRP2614',type:'voip',status:'online',ip:'—',model:'Grandstream GRP2614',mac:'ec:74:d7:71:fb:45',uplink:'SW1',uplinkPort:'Port 23',uplinkSpeed:'GbE',notes:'⚠ Room location unknown — confirm on next visit.'},
+  {id:'voip-b1',name:'Yealink SIP-T77U #1',type:'voip',status:'online',ip:'—',model:'Yealink SIP-T77U',mac:'c4:fc:22:0c:fe:78',uplink:'SW4b',uplinkPort:'Port 1',uplinkSpeed:'GbE',notes:'⚠ SIP failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.'},
+  {id:'voip-b2',name:'Yealink SIP-T77U #2',type:'voip',status:'online',ip:'—',model:'Yealink SIP-T77U',mac:'c4:fc:22:0c:02:46',uplink:'SW4b',uplinkPort:'Port 2',uplinkSpeed:'GbE',notes:'⚠ SIP failing — on ExperienceGateway (client isolation). Fix: move to Learning Center SSID.'},
+  {id:'cisco-cam',name:'Cisco Camera Switch',type:'cam-switch',status:'online',ip:'—',model:'Cisco (unmanaged)',mac:'ec:1d:8b:ef:7a:34',uplink:'SW3',uplinkPort:'Port 8',uplinkSpeed:'GbE',notes:'⚠ 2 TB+ traffic. 35+ downstream devices (Hanwha/Axis/Reolink cameras + nested TP-Link switch). VLAN 50 recommended.'},
+  {id:'vms-asus',name:'ASUS Vigil VMS Server',type:'server',status:'online',ip:'—',model:'ASUS Tek VMS',mac:'18:31:bf:52:4?:??',uplink:'SW4b',uplinkPort:'Port 7',uplinkSpeed:'GbE',notes:'⚠ 2.6 TB traffic. No recording configured. Synology NAS recommended.'}
 ];
 // @@NODES_END@@
 
 // @@LINKS_BEGIN@@
 const LINKS = [
-  {
-    "source": "isp",
-    "target": "router",
-    "speed": "10gbe"
-  },
-  {
-    "source": "router",
-    "target": "sw1",
-    "speed": "gbe",
-    "port": "Port 3 → 47"
-  },
-  {
-    "source": "router",
-    "target": "sw2",
-    "speed": "gbe",
-    "port": "Port 1 → 7"
-  },
-  {
-    "source": "router",
-    "target": "sw4a",
-    "speed": "gbe",
-    "port": "Port 2 → 1"
-  },
-  {
-    "source": "router",
-    "target": "ap-office",
-    "speed": "gbe",
-    "port": "Port 5"
-  },
-  {
-    "source": "sw1",
-    "target": "ap-lobby",
-    "speed": "gbe",
-    "port": "Port 3"
-  },
-  {
-    "source": "sw1",
-    "target": "ap-conf",
-    "speed": "gbe",
-    "port": "Port 4"
-  },
-  {
-    "source": "sw1",
-    "target": "ap-choir",
-    "speed": "gbe",
-    "port": "Port 10"
-  },
-  {
-    "source": "sw1",
-    "target": "ap-pastor",
-    "speed": "gbe",
-    "port": "Port 27"
-  },
-  {
-    "source": "sw1",
-    "target": "voip-sw1",
-    "speed": "gbe",
-    "port": "Port 13"
-  },
-  {
-    "source": "sw1",
-    "target": "grandstream",
-    "speed": "gbe",
-    "port": "Port 23"
-  },
-  {
-    "source": "sw4a",
-    "target": "sw3",
-    "speed": "gbe",
-    "port": "Port 2 → 6"
-  },
-  {
-    "source": "sw4a",
-    "target": "ap-chapel",
-    "speed": "gbe",
-    "port": "Port 3"
-  },
-  {
-    "source": "sw2",
-    "target": "ap-sound",
-    "speed": "gbe",
-    "port": "Port 3"
-  },
-  {
-    "source": "sw2",
-    "target": "ap-youth",
-    "speed": "gbe",
-    "port": "Port 6"
-  },
-  {
-    "source": "sw2",
-    "target": "ap-acpro",
-    "speed": "gbe",
-    "port": "Port 5"
-  },
-  {
-    "source": "sw2",
-    "target": "ap-stage",
-    "speed": "gbe",
-    "port": "Port 8"
-  },
-  {
-    "source": "sw2",
-    "target": "ap-security",
-    "speed": "gbe",
-    "port": "Port 13"
-  },
-  {
-    "source": "sw3",
-    "target": "ap-gym",
-    "speed": "gbe",
-    "port": "Port 2"
-  },
-  {
-    "source": "sw3",
-    "target": "ap-kidz",
-    "speed": "gbe",
-    "port": "Port 7"
-  },
-  {
-    "source": "sw3",
-    "target": "ap-lc",
-    "speed": "gbe",
-    "port": "Port ?",
-    "offline": true
-  },
-  {
-    "source": "sw3",
-    "target": "cisco-cam",
-    "speed": "gbe",
-    "port": "Port 8"
-  },
-  {
-    "source": "sw3",
-    "target": "sw4b",
-    "speed": "gbe",
-    "port": "Port 5 → 8"
-  },
-  {
-    "source": "sw4b",
-    "target": "ap-lcgym",
-    "speed": "gbe",
-    "port": "Port 3"
-  },
-  {
-    "source": "sw4b",
-    "target": "ap-lckitchen",
-    "speed": "gbe",
-    "port": "Port 4"
-  },
-  {
-    "source": "sw4b",
-    "target": "voip-b1",
-    "speed": "gbe",
-    "port": "Port 1"
-  },
-  {
-    "source": "sw4b",
-    "target": "voip-b2",
-    "speed": "gbe",
-    "port": "Port 2"
-  },
-  {
-    "source": "sw4b",
-    "target": "vms-asus",
-    "speed": "gbe",
-    "port": "Port 7"
-  }
+  {source:'isp',target:'router',speed:'10gbe'},
+  {source:'router',target:'sw1',speed:'gbe',port:'Port 3 → 47'},
+  {source:'router',target:'sw2',speed:'gbe',port:'Port 1 → 7'},
+  {source:'router',target:'sw4a',speed:'gbe',port:'Port 2 → 1'},
+  {source:'router',target:'ap-office',speed:'gbe',port:'Port 5'},
+  {source:'sw1',target:'ap-lobby',speed:'gbe',port:'Port 3'},
+  {source:'sw1',target:'ap-conf',speed:'gbe',port:'Port 4'},
+  {source:'sw1',target:'ap-choir',speed:'gbe',port:'Port 10'},
+  {source:'sw1',target:'ap-pastor',speed:'gbe',port:'Port 27'},
+  {source:'sw1',target:'voip-sw1',speed:'gbe',port:'Port 13'},
+  {source:'sw1',target:'grandstream',speed:'gbe',port:'Port 23'},
+  {source:'sw4a',target:'sw3',speed:'gbe',port:'Port 2 → 6'},
+  {source:'sw4a',target:'ap-chapel',speed:'gbe',port:'Port 3'},
+  {source:'sw2',target:'ap-sound',speed:'gbe',port:'Port 3'},
+  {source:'sw2',target:'ap-youth',speed:'gbe',port:'Port 6'},
+  {source:'sw2',target:'ap-acpro',speed:'gbe',port:'Port 5'},
+  {source:'sw2',target:'ap-stage',speed:'gbe',port:'Port 8'},
+  {source:'sw2',target:'ap-security',speed:'gbe',port:'Port 13'},
+  {source:'sw3',target:'ap-gym',speed:'gbe',port:'Port 2'},
+  {source:'sw3',target:'ap-kidz',speed:'gbe',port:'Port 7'},
+  {source:'sw3',target:'ap-lc',speed:'gbe',port:'Port ?',offline:true},
+  {source:'sw3',target:'cisco-cam',speed:'gbe',port:'Port 8'},
+  {source:'sw3',target:'sw4b',speed:'gbe',port:'Port 5 → 8'},
+  {source:'sw4b',target:'ap-lcgym',speed:'gbe',port:'Port 3'},
+  {source:'sw4b',target:'ap-lckitchen',speed:'gbe',port:'Port 4'},
+  {source:'sw4b',target:'voip-b1',speed:'gbe',port:'Port 1'},
+  {source:'sw4b',target:'voip-b2',speed:'gbe',port:'Port 2'},
+  {source:'sw4b',target:'vms-asus',speed:'gbe',port:'Port 7'}
 ];
 // @@LINKS_END@@
 // @@DATA_END@@
@@ -1973,7 +1068,7 @@ const OPEN_ISSUES=[
   {sev:'high',device:'Yealink SIP-T77U ×4',title:'SIP registration failing on all phones',desc:'VoIP phones on ExperienceGateway SSID which has client isolation — SIP packets to PBX are blocked.',action:'Move all Yealink phones to Learning Center SSID (no client isolation)'},
   {sev:'medium',device:'Stage Right AP · 10.0.0.18',title:'Outdated firmware',desc:'Same older model as AC Pro (U7PG2, FW 6.8.2). Behind current FW but not known to cause interference.',action:'Update firmware or schedule replacement'},
   {sev:'medium',device:'Learning Center AP · 10.0.0.14',title:'AP offline, unmounted',desc:'Physically removed from mount, confirmed offline. Coverage now handled by LC near Gym and LC near Kitchen.',action:'Decommission or redeploy to Bears/Bunnies/Owls/Chipmunks classrooms'},
-  {sev:'medium',device:'Classrooms — Bears, Bunnies, Owls, Chipmunks',title:'No wireless coverage',desc:'Four brick-walled classrooms have no dedicated AP coverage. Plan: two U7 Lite APs.',action:'Purchase and install two U7 Lite APs — contact Jose (install) and Renee (LC oversight)'},
+  {sev:'low',device:'Classrooms — Bears, Bunnies, Owls, Chipmunks',title:'Coverage confirmed via existing APs',desc:'LC near Gym and LC near Kitchen are each centrally locked between two classrooms with sufficient signal strength to cover both adjacent rooms plus the open area. No additional APs needed.',action:'Monitor signal quality in classrooms — confirmed resolved'},
   {sev:'medium',device:'Network-wide',title:'No VLAN segmentation',desc:'Camera traffic (2 TB+ via Cisco switch) and VoIP run on same flat 10.0.0.0/20 LAN.',action:'VLAN 50 for cameras is the recommended first step'},
   {sev:'low',device:'Grandstream GRP2614 · SW1 Port 23',title:'Room location unknown',desc:'Phone confirmed on SW1 Port 23 (MAC ec:74:d7:71:fb:45) but physical room not identified.',action:'Identify room on next onsite visit'},
   {sev:'low',device:'4th Yealink · MAC 03:88',title:'Phone location unknown',desc:'Topology shows 4 Yealink SIP-T77U phones. Three documented. 4th (c4:fc:22:0c:03:88) has no documented port.',action:'Locate and document on next onsite visit'},
@@ -2010,22 +1105,101 @@ document.getElementById('issues-modal').addEventListener('click',e=>{if(e.target
 function exportToExcel(){
   const wb=XLSX.utils.book_new();
   function sheet(rows,name){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);}
-  const all=[['Name','Type','Status','IP','MAC','Model','FW','Uplink','Port','Notes']];
-  NODES.filter(n=>n.type!=='isp').forEach(n=>all.push([n.name,n.type,n.status,n.ip||'—',n.mac||'—',n.model||'—',n.version||'—',n.uplink||'—',n.uplinkPort||'—',n.notes||'']));
+
+  // ── 1. Full Inventory
+  const all=[['Name','Type','Status','IP','MAC','Model','Firmware','Uplink Device','Uplink Port','Notes']];
+  NODES.filter(n=>n.type!=='isp').forEach(n=>all.push([
+    n.name,n.type,n.status,n.ip||'—',n.mac||'—',n.model||'—',
+    n.version||'—',n.uplink||'—',n.uplinkPort||'—',n.notes||''
+  ]));
   sheet(all,'Full Inventory');
-  const aps=[['AP','Status','IP','MAC','Model','FW','Uplink','Port','2.4 GHz','5 GHz','SSIDs']];
-  NODES.filter(n=>n.type==='ap').forEach(n=>aps.push([n.name,n.status,n.ip,n.mac||'—',n.model||'—',n.version||'—',n.uplink,n.uplinkPort,n.ch24||'—',n.ch5||'—',(n.ssids||[]).join(', ')]));
+
+  // ── 2. Access Points
+  const aps=[['AP Name','Status','IP','MAC','Model','Firmware','Uplink Switch','Switch Port','2.4 GHz Ch','5 GHz Ch','SSIDs','Notes']];
+  NODES.filter(n=>n.type==='ap').forEach(n=>aps.push([
+    n.name,n.status,n.ip,n.mac||'—',n.model||'—',n.version||'—',
+    n.uplink,n.uplinkPort,n.ch24||'—',n.ch5||'—',
+    (n.ssids||[]).join(', '),n.notes||''
+  ]));
   sheet(aps,'Access Points');
-  const sw=[['Switch','IP','MAC','Model','Uplink','Port','CPU%','Mem%','STP Root']];
-  NODES.filter(n=>n.type==='switch').forEach(n=>sw.push([n.name,n.ip,n.mac,n.model||'—',n.uplink,n.uplinkPort,n.cpu||'—',n.mem||'—',n.isStpRoot?'Yes':'']));
-  sheet(sw,'Switches');
-  const vw=[['Name','Model','MAC','Uplink','Port','Notes']];
-  NODES.filter(n=>['voip','cam-switch','server'].includes(n.type)).forEach(n=>vw.push([n.name,n.model||'—',n.mac||'—',n.uplink,n.uplinkPort,n.notes||'']));
-  sheet(vw,'VoIP + Wired');
-  const iss=[['#','Sev','Device','Issue','Desc','Action']];
+
+  // ── 3. Switch Summary
+  const sw=[['Switch Name','IP','MAC','Model','Uplink Device','Uplink Port','Link Speed','CPU %','Mem %','STP Root','Total Ports','Used Ports','Notes']];
+  NODES.filter(n=>n.type==='switch').forEach(n=>{
+    const used = n.portMap ? Object.keys(n.portMap.connections||{}).length : 0;
+    const total = n.portMap ? n.portMap.total : '—';
+    sw.push([n.name,n.ip,n.mac,n.model||'—',n.uplink,n.uplinkPort,
+      n.uplinkSpeed||'GbE',n.cpu||'—',n.mem||'—',
+      n.isStpRoot?'Yes':'No',total,used,n.notes||'']);
+  });
+  sheet(sw,'Switch Summary');
+
+  // ── 4. Port Maps (one section per switch)
+  const pm=[['Switch','Switch IP','Port #','Port Name','Connected Device','Device Type','Is Uplink','Notes']];
+  NODES.filter(n=>n.type==='switch'||n.type==='router').forEach(n=>{
+    if(!n.portMap) return;
+    const {total,connections} = n.portMap;
+    for(let i=1;i<=total;i++){
+      const c = connections[i];
+      pm.push([
+        n.name, n.ip, i,
+        c ? c.name : '(empty)',
+        c ? c.name : '',
+        c ? c.type : '',
+        c && c.isUplink ? 'Yes' : '',
+        ''
+      ]);
+    }
+    // blank row between switches
+    pm.push(['','','','','','','','']);
+  });
+  sheet(pm,'Port Maps');
+
+  // ── 5. VoIP + Wired Devices
+  const vw=[['Name','Type','Model','MAC','Uplink Switch','Port','Notes']];
+  NODES.filter(n=>['voip','cam-switch','server'].includes(n.type)).forEach(n=>
+    vw.push([n.name,n.type,n.model||'—',n.mac||'—',n.uplink,n.uplinkPort,n.notes||''])
+  );
+  sheet(vw,'VoIP + Wired Devices');
+
+  // ── 6. Network Links (full topology)
+  const lk=[['Source Device','Source IP','Target Device','Target IP','Link Speed','Port Info','Offline']];
+  const nm=Object.fromEntries(NODES.map(n=>[n.id,n]));
+  LINKS.forEach(l=>{
+    const s=nm[l.source],t=nm[l.target];
+    lk.push([
+      s?s.name:l.source, s?s.ip:'—',
+      t?t.name:l.target, t?t.ip:'—',
+      l.speed==='10gbe'?'10 GbE':'1 GbE',
+      l.port||'—',
+      l.offline?'Yes':''
+    ]);
+  });
+  sheet(lk,'Network Links');
+
+  // ── 7. SSIDs
+  sheet([
+    ['SSID','Security','Scope','Client Isolation','Notes'],
+    ['Leaders','WPA2','All APs','No','Staff/leadership'],
+    ['ExperienceGateway','Open + Captive Portal','All APs','Yes','Guest — isolation blocks VoIP SIP'],
+    ['ExperienceMedia','WPA2','Sound Booth only','No','AV/media equipment'],
+    ['Learning Center','WPA2','LC near Gym, LC near Kitchen, Kidz Zone','No','Move VoIP phones here to fix SIP']
+  ],'SSIDs');
+
+  // ── 8. Open Issues
+  const iss=[['#','Severity','Affected Device','Issue Title','Description','Recommended Action']];
   OPEN_ISSUES.forEach((i,x)=>iss.push([x+1,i.sev.toUpperCase(),i.device,i.title,i.desc,i.action]));
   sheet(iss,'Open Issues');
-  sheet([['SSID','Security','Scope','Notes'],['Leaders','WPA2','All APs','Staff'],['ExperienceGateway','Open+Portal','All APs','Guest — isolation ON (blocks SIP)'],['ExperienceMedia','WPA2','Sound Booth only','AV equipment'],['Learning Center','WPA2','LC near Gym + Kitchen + Kidz Zone','Move VoIP phones here']],'SSIDs');
+
+  // ── 9. IP Address Registry
+  const ip=[['Device Name','Type','IP Address','MAC Address','DHCP/Static','Subnet','Notes']];
+  NODES.filter(n=>n.ip&&n.ip!=='—'&&n.type!=='isp').forEach(n=>ip.push([
+    n.name,n.type,n.ip,n.mac||'—',
+    ['router','switch'].includes(n.type)?'Static':'DHCP',
+    '10.0.0.0/20',n.notes||''
+  ]));
+  sheet(ip,'IP Address Registry');
+
   XLSX.writeFile(wb,`ExperienceChurch_Network_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 function exportToWord(){
@@ -2068,7 +1242,20 @@ function exportToWord(){
   ${tbl(['AP Name','Status','IP','Model','FW','Uplink','Port','2.4 GHz','5 GHz'],aps.map((n,i)=>tr(i,n.name,badge(n.status),n.ip,n.model||'—',n.version||'—',n.uplink,n.uplinkPort,n.ch24||'—',n.ch5||'—')).join(''))}
   <h2>5. SSID Configuration</h2>
   ${tbl(['SSID','Security','Scope','Notes'],[['Leaders','WPA2','All APs','Staff/leadership'],['ExperienceGateway','Open+Portal','All APs','Guest — isolation ON (blocks SIP)'],['ExperienceMedia','WPA2','Sound Booth only','AV equipment'],['Learning Center','WPA2','LC near Gym+Kitchen+Kidz Zone','Move VoIP phones here to fix SIP']].map((r,i)=>tr(i,...r)).join(''))}
-  <h2>6. VoIP + Wired Devices</h2>
+  <h2>6. Switch Port Maps</h2>
+  ${NODES.filter(n=>n.type==='switch'||n.type==='router').filter(n=>n.portMap).map(n=>{
+    const {total,connections}=n.portMap;
+    let rows='';
+    for(let i=1;i<=total;i++){
+      const c=connections[i];
+      const bg=i%2===0?'#F8FAFC':'#fff';
+      const devColor=c&&c.isUplink?'color:#1E3A5F;font-weight:600':c?'color:#166534':'color:#9CA3AF';
+      rows+=`<tr style="background:${bg}"><td style="padding:3px 7px;font-family:Courier New,monospace;font-size:10px;color:#6B7280">Port ${i}</td><td style="padding:3px 7px;font-size:10px;${devColor}">${c?c.name+' '+(c.isUplink?'[UPLINK]':''):'— empty'}</td><td style="padding:3px 7px;font-size:10px;color:#6B7280">${c?c.type:''}</td></tr>`;
+    }
+    return `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:600;color:#1E3A5F;margin-bottom:4px">${n.name} <span style="font-size:10px;color:#6B7280;font-family:Courier New,monospace">${n.ip} · ${n.mac}</span></div>
+    <table style="border-collapse:collapse;width:100%;font-size:11px"><thead><tr style="background:#1E3A5F"><th style="color:#fff;padding:4px 7px;text-align:left;font-size:10px;width:80px">Port</th><th style="color:#fff;padding:4px 7px;text-align:left;font-size:10px">Connected Device</th><th style="color:#fff;padding:4px 7px;text-align:left;font-size:10px;width:100px">Type</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }).join('')}
+  <h2>7. VoIP + Wired Devices</h2>
   ${tbl(['Name','Model','MAC','Uplink','Port','Notes'],NODES.filter(n=>['voip','cam-switch','server'].includes(n.type)).map((n,i)=>tr(i,n.name,n.model||'—',n.mac||'—',n.uplink,n.uplinkPort,n.notes||'—')).join(''))}
   <div class="footer">ExperienceChurch Network Documentation v2 · Generated ${td}</div>
   </body></html>`;
