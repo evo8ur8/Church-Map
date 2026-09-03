@@ -1,7 +1,19 @@
 {
-  "updated": "2026-09-01T01:33:36Z",
+  "updated": "2026-09-03T02:07:47Z",
   "source": "UniFi Network Integration API v1 (local)",
-  "sites": null,
+  "sites": {
+    "offset": 0,
+    "limit": 25,
+    "count": 1,
+    "totalCount": 1,
+    "data": [
+      {
+        "id": "88f7af54-98f8-306a-a1c7-c9349722b1f6",
+        "internalReference": "default",
+        "name": "Default"
+      }
+    ]
+  },
   "devices": null,
   "clients": null
 }
