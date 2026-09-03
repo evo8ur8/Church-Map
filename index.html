@@ -316,6 +316,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 <script>
 // ═══════════════════════════════════════════════════════
+//  LIVE BACKEND
+// ═══════════════════════════════════════════════════════
+// FastAPI backend on the OptiPlex (church-ai-agent). Reachable over
+// Tailscale from anywhere on the tailnet, or swap for the LAN IP
+// (10.0.0.x) if this map is only ever opened on-site. If unreachable
+// (off-network, backend down), the map falls back to the static
+// data/live-data.json export, then to the embedded defaults below.
+const BACKEND_URL = 'http://100.124.57.65:8090';
+
+function fetchWithTimeout(url, ms = 5000) {
+  return Promise.race([
+    fetch(url),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
 //  EMBEDDED DEVICE DATA  (from UniFi exports + CSV)
 // ═══════════════════════════════════════════════════════
 let networkData = buildDefaultData();
@@ -804,6 +821,8 @@ function openPanel(node) {
   html += row('Uplink Device', node.uplink||'—');
   html += row('Uplink Port', node.uplinkPort||'—');
   html += row('Link Speed', node.uplinkSpeed||'GbE');
+  if(node.poeWatts) html += row('PoE Draw', node.poeWatts+' W');
+  if(node.portUp !== undefined) html += row('Port Status', node.portUp?'Up':'Down', node.portUp?'green':'red');
   html += '</div>';
 
   // Device info
@@ -1003,29 +1022,94 @@ dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.classList.re
 document.getElementById('file-input').addEventListener('change', e=>handleFiles(e.target.files));
 
 // ─── Init ───
-window.addEventListener('load', () => { initSVG(); fetchLiveData(); });
+window.addEventListener('load', () => { initSVG(); loadLiveAndPortData(); });
 window.addEventListener('resize', () => { initSVG(); });
 
 // ═══════════════════════════════════════════════════════
-//  LIVE DATA — auto-load from data/live-data.json
+//  LIVE DATA — pulled from the church-ai-agent backend on the
+//  OptiPlex (/api/live for device status, /api/ports for the
+//  switch/port map). Falls back to the static data/live-data.json
+//  export, then to the embedded defaults if nothing is reachable.
 // ═══════════════════════════════════════════════════════
-function fetchLiveData() {
-  fetch('./data/live-data.json?t=' + Date.now())
-    .then(r => { if(!r.ok) throw new Error('No live data'); return r.json(); })
-    .then(data => {
-      parseLiveData(data);
-      const dot = document.getElementById('live-dot');
-      const ts  = document.getElementById('live-timestamp');
-      dot.classList.add('live');
-      const updated = new Date(data.updated);
-      const ago = Math.round((Date.now() - updated) / 60000);
-      ts.textContent = ago < 2 ? 'live' : `updated ${ago}m ago`;
-      ts.title = updated.toLocaleString();
-    })
-    .catch(() => {
-      // No live data file yet — that's fine, static data is shown
-      document.getElementById('live-timestamp').textContent = 'static data';
+async function loadLiveAndPortData() {
+  const dot = document.getElementById('live-dot');
+  const ts  = document.getElementById('live-timestamp');
+
+  const live = await fetchLiveOrStatic();
+  if (live) {
+    parseLiveData(live);
+    dot.classList.add('live');
+    ts.textContent = live._source === 'backend' ? 'live' : 'static export';
+    ts.title = 'Source: ' + live._source;
+  } else {
+    ts.textContent = 'static data';
+    ts.title = 'Backend unreachable — showing embedded defaults';
+  }
+
+  const ports = await fetchPortData();
+  if (ports && ports.length) mergePortData(ports);
+
+  refreshVisualization();
+}
+
+async function fetchLiveOrStatic() {
+  // Try the live backend first (works on Tailscale/LAN)
+  try {
+    const r = await fetchWithTimeout(BACKEND_URL + '/api/live');
+    if (r.ok) {
+      const data = await r.json();
+      data._source = 'backend';
+      return data;
+    }
+  } catch (e) { /* backend unreachable — fall through */ }
+
+  // Fall back to the static export, if something ever populates it
+  try {
+    const r = await fetchWithTimeout('./data/live-data.json?t=' + Date.now());
+    if (r.ok) {
+      const data = await r.json();
+      data._source = 'static export';
+      return data;
+    }
+  } catch (e) { /* nothing to fall back to — embedded defaults stand */ }
+
+  return null;
+}
+
+async function fetchPortData() {
+  try {
+    const r = await fetchWithTimeout(BACKEND_URL + '/api/ports');
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data.ports || null;
+  } catch (e) {
+    return null; // backend unreachable — port details just won't refresh
+  }
+}
+
+function mergePortData(rows) {
+  let updated = 0;
+  rows.forEach(port => {
+    if (!port.connected_device) return;
+    const target = String(port.connected_device).toLowerCase();
+    const node = networkData.nodes.find(n => {
+      if (port.connected_mac && n.mac && n.mac.toLowerCase() === String(port.connected_mac).toLowerCase()) {
+        return true;
+      }
+      const name = (n.name || '').toLowerCase();
+      return !!name && (name === target || name.includes(target) || target.includes(name));
     });
+    if (!node) return;
+    node.uplink = port.switch;
+    node.uplinkPort = `Port ${port.port}`;
+    if (port.speed_mbps) {
+      node.uplinkSpeed = port.speed_mbps >= 1000 ? `${port.speed_mbps / 1000} GbE` : `${port.speed_mbps} Mbps`;
+    }
+    if (port.poe_watts !== undefined && port.poe_watts !== null) node.poeWatts = port.poe_watts;
+    if (port.up !== undefined) node.portUp = port.up;
+    updated++;
+  });
+  if (updated > 0) console.log(`Port data: matched ${updated} devices to switch ports`);
 }
 
 function parseLiveData(data) {
