@@ -1132,10 +1132,10 @@ function parseLiveData(data) {
     const live = byMac[(node.mac||'').toLowerCase()] || byName[(node.name||'').toLowerCase()];
     if(!live) return;
     // Status
-    const state = live.state || live.status || '';
-    if(state === 'CONNECTED' || state === 'online' || state === 1 || state === '1') {
+    const state = String(live.state || live.status || '').toUpperCase();
+    if(state === 'CONNECTED' || state === 'ONLINE' || state === '1') {
       node.status = 'online';
-    } else if(state === 'DISCONNECTED' || state === 'offline' || state === 0 || state === '0') {
+    } else if(state === 'DISCONNECTED' || state === 'OFFLINE' || state === '0') {
       node.status = 'offline';
     }
     // Firmware
