@@ -318,12 +318,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 // ═══════════════════════════════════════════════════════
 //  LIVE BACKEND
 // ═══════════════════════════════════════════════════════
-// FastAPI backend on the OptiPlex (church-ai-agent). Reachable over
-// Tailscale from anywhere on the tailnet, or swap for the LAN IP
-// (10.0.0.x) if this map is only ever opened on-site. If unreachable
-// (off-network, backend down), the map falls back to the static
-// data/live-data.json export, then to the embedded defaults below.
-const BACKEND_URL = 'http://100.124.57.65:8090';
+// FastAPI backend on the OptiPlex (church-ai-agent), exposed over
+// HTTPS via Tailscale Serve so browsers (Safari in particular) don't
+// block it as mixed content on the HTTPS-served map. Reachable from
+// anywhere on your tailnet. Falls back to the static data/live-data.json
+// export, then to the embedded defaults if unreachable (e.g. off-tailnet).
+const BACKEND_URL = 'https://church-net.tail25bb98.ts.net';
 
 function fetchWithTimeout(url, ms = 5000) {
   return Promise.race([
