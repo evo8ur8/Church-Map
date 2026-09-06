@@ -1052,6 +1052,44 @@ async function loadLiveAndPortData() {
   refreshVisualization();
 }
 
+async function fetchPortData() {
+  try {
+    const r = await fetchWithTimeout(BACKEND_URL + '/api/ports');
+    if (!r.ok) return null;
+    const data = await r.json();
+    return data.ports || null;
+  } catch (e) {
+    return null; // backend unreachable, or local-admin auth not configured
+  }
+}
+
+function mergePortData(rows) {
+  // Only rows with a resolved connected_device are usable for merging
+  // (requires local-admin auth configured on the backend - see README).
+  let updated = 0;
+  rows.forEach(port => {
+    if (!port.connected_device) return;
+    const target = String(port.connected_device).toLowerCase();
+    const node = networkData.nodes.find(n => {
+      if (port.connected_mac && n.mac && n.mac.toLowerCase() === String(port.connected_mac).toLowerCase()) {
+        return true;
+      }
+      const name = (n.name || '').toLowerCase();
+      return !!name && (name === target || name.includes(target) || target.includes(name));
+    });
+    if (!node) return;
+    node.uplink = port.switch;
+    node.uplinkPort = `Port ${port.port}`;
+    if (port.speed_mbps) {
+      node.uplinkSpeed = port.speed_mbps >= 1000 ? `${port.speed_mbps / 1000} GbE` : `${port.speed_mbps} Mbps`;
+    }
+    if (port.poe_power_w !== undefined && port.poe_power_w !== null) node.poeWatts = port.poe_power_w;
+    if (port.up !== undefined) node.portUp = port.up;
+    updated++;
+  });
+  if (updated > 0) console.log(`Port data: matched ${updated} devices to switch ports`);
+}
+
 async function fetchLiveOrStatic() {
   // Try the live backend first (works on Tailscale/LAN)
   try {
@@ -1074,42 +1112,6 @@ async function fetchLiveOrStatic() {
   } catch (e) { /* nothing to fall back to — embedded defaults stand */ }
 
   return null;
-}
-
-async function fetchPortData() {
-  try {
-    const r = await fetchWithTimeout(BACKEND_URL + '/api/ports');
-    if (!r.ok) return null;
-    const data = await r.json();
-    return data.ports || null;
-  } catch (e) {
-    return null; // backend unreachable — port details just won't refresh
-  }
-}
-
-function mergePortData(rows) {
-  let updated = 0;
-  rows.forEach(port => {
-    if (!port.connected_device) return;
-    const target = String(port.connected_device).toLowerCase();
-    const node = networkData.nodes.find(n => {
-      if (port.connected_mac && n.mac && n.mac.toLowerCase() === String(port.connected_mac).toLowerCase()) {
-        return true;
-      }
-      const name = (n.name || '').toLowerCase();
-      return !!name && (name === target || name.includes(target) || target.includes(name));
-    });
-    if (!node) return;
-    node.uplink = port.switch;
-    node.uplinkPort = `Port ${port.port}`;
-    if (port.speed_mbps) {
-      node.uplinkSpeed = port.speed_mbps >= 1000 ? `${port.speed_mbps / 1000} GbE` : `${port.speed_mbps} Mbps`;
-    }
-    if (port.poe_watts !== undefined && port.poe_watts !== null) node.poeWatts = port.poe_watts;
-    if (port.up !== undefined) node.portUp = port.up;
-    updated++;
-  });
-  if (updated > 0) console.log(`Port data: matched ${updated} devices to switch ports`);
 }
 
 function parseLiveData(data) {
@@ -1144,6 +1146,12 @@ function parseLiveData(data) {
     }
     // IP
     if(live.ipAddress || live.ip) node.ip = live.ipAddress || live.ip;
+    // CPU / memory (from local-admin enrichment, if configured on the backend)
+    if(live.cpu !== undefined) node.cpu = live.cpu;
+    if(live.mem !== undefined) node.mem = live.mem;
+    // Radio channel (same enrichment source)
+    if(live.ch24) node.ch24 = live.ch24;
+    if(live.ch5) node.ch5 = live.ch5;
     updated++;
   });
 
