@@ -1114,6 +1114,13 @@ async function fetchLiveOrStatic() {
   return null;
 }
 
+function normalizeName(s) {
+  // UniFi device names sometimes have stray double-spaces/trailing
+  // spaces (e.g. "Security  Office" vs the map's "Security Office") -
+  // collapse whitespace so name-based matching isn't fooled by that.
+  return (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
 function parseLiveData(data) {
   const devices = (data.devices?.data) || [];
   if(!devices.length) return;
@@ -1123,7 +1130,7 @@ function parseLiveData(data) {
   const byName = {};
   devices.forEach(d => {
     const mac  = (d.mac || d.macAddress || '').toLowerCase();
-    const name = (d.name || '').toLowerCase();
+    const name = normalizeName(d.name);
     if(mac)  byMac[mac]   = d;
     if(name) byName[name] = d;
   });
@@ -1131,7 +1138,7 @@ function parseLiveData(data) {
   // Merge status into our nodes
   let updated = 0;
   networkData.nodes.forEach(node => {
-    const live = byMac[(node.mac||'').toLowerCase()] || byName[(node.name||'').toLowerCase()];
+    const live = byMac[(node.mac||'').toLowerCase()] || byName[normalizeName(node.name)];
     if(!live) return;
     // Status
     const state = String(live.state || live.status || '').toUpperCase();
@@ -1144,8 +1151,12 @@ function parseLiveData(data) {
     if(live.firmwareVersion || live.version) {
       node.version = live.firmwareVersion || live.version;
     }
-    // IP
-    if(live.ipAddress || live.ip) node.ip = live.ipAddress || live.ip;
+    // IP - skip for the router: the UniFi API reports the gateway's
+    // WAN IP here (already shown on the ISP node), not the LAN IP
+    // staff actually use to reach it (10.0.0.1).
+    if(node.type !== 'router' && (live.ipAddress || live.ip)) {
+      node.ip = live.ipAddress || live.ip;
+    }
     // CPU / memory (from local-admin enrichment, if configured on the backend)
     if(live.cpu !== undefined) node.cpu = live.cpu;
     if(live.mem !== undefined) node.mem = live.mem;
