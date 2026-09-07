@@ -1147,6 +1147,12 @@ function parseLiveData(data) {
     } else if(state === 'DISCONNECTED' || state === 'OFFLINE' || state === '0') {
       node.status = 'offline';
     }
+    // Display name — keep in sync with whatever it's named in UniFi
+    // (safe now that matching is MAC-first: a rename won't break the
+    // match on the next poll since the MAC doesn't change)
+    if(live.name) {
+      node.name = live.name;
+    }
     // Firmware
     if(live.firmwareVersion || live.version) {
       node.version = live.firmwareVersion || live.version;
