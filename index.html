@@ -553,6 +553,11 @@ let svgEl, g, zoomBehavior, simulation;
 let currentFilter = 'all', selectedId = null;
 const tooltip = document.getElementById('tooltip');
 
+// Live diagnostic findings (from /api/diagnostics) and staff/AI notes
+// (from /api/notes) - fetched once per page load alongside live device data.
+let liveFindings = [];
+let liveNotes = {};
+
 function getNodeColor(d) {
   if (d.type==='isp')    return 'var(--violet)';
   if (d.type==='router') return 'var(--indigo)';
@@ -854,11 +859,41 @@ function openPanel(node) {
     html += '</div>';
   }
 
-  // Notes
+  // Static documentation notes (hand-written, from the map's own data)
   if(node.notes) {
-    html += `<div class="detail-section"><div class="detail-section-title">Notes</div>
+    html += `<div class="detail-section"><div class="detail-section-title">Documentation</div>
       <div style="font-size:12px;color:var(--text2);line-height:1.6">${node.notes}</div></div>`;
   }
+
+  // Live diagnostic findings — pulled fresh from /api/diagnostics each
+  // load, so these clear on their own once the underlying issue is fixed
+  const findings = findingsForNode(node);
+  if(findings.length) {
+    html += `<div class="detail-section"><div class="detail-section-title">Findings (Live)</div>`;
+    findings.forEach(f => {
+      const color = f.severity === 'critical' ? 'red' : f.severity === 'warning' ? 'amber' : '';
+      html += `<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:6px">
+        <span class="detail-val ${color}" style="display:inline;font-family:inherit;font-weight:600">${f.severity || 'info'}</span> — ${f.message}
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // Editable notes — persisted via /api/notes on the backend, so
+  // they're shared across anyone viewing the map, and the AI agent
+  // will eventually be able to write here too
+  const noteKey = noteKeyForNode(node);
+  const existingNote = liveNotes[noteKey];
+  html += `<div class="detail-section"><div class="detail-section-title">Notes</div>
+    <textarea id="notes-textarea" style="width:100%;min-height:70px;background:var(--surface2);
+      border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;
+      font-family:'Inter',sans-serif;padding:8px;resize:vertical"
+      placeholder="Add a note about this device…">${escapeHtml(existingNote ? existingNote.text : '')}</textarea>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+      <span id="notes-status" style="font-size:10px;color:var(--text3)">${existingNote ? 'Updated ' + timeAgo(existingNote.updated_at) + (existingNote.author ? ' by ' + escapeHtml(existingNote.author) : '') : ''}</span>
+      <button class="btn" style="padding:4px 10px;font-size:11px" onclick="saveNote('${noteKey}')">Save</button>
+    </div>
+  </div>`;
 
   document.getElementById('panel-body').innerHTML = html;
 }
@@ -1049,7 +1084,89 @@ async function loadLiveAndPortData() {
   const ports = await fetchPortData();
   if (ports && ports.length) mergePortData(ports);
 
+  liveFindings = await fetchDiagnostics();
+  liveNotes = await fetchNotes();
+
   refreshVisualization();
+}
+
+async function fetchDiagnostics() {
+  try {
+    const r = await fetchWithTimeout(BACKEND_URL + '/api/diagnostics');
+    if (!r.ok) return [];
+    const data = await r.json();
+    return data.findings || [];
+  } catch (e) {
+    return []; // backend unreachable - findings section just won't show
+  }
+}
+
+async function fetchNotes() {
+  try {
+    const r = await fetchWithTimeout(BACKEND_URL + '/api/notes');
+    if (!r.ok) return {};
+    const data = await r.json();
+    return data.notes || {};
+  } catch (e) {
+    return {}; // backend unreachable - notes section falls back to empty
+  }
+}
+
+// Matches a node to diagnostic findings by exact name match against
+// each "/"-separated part of the finding's `area` field (diagnostics.py
+// emits e.g. "AC Pro / Choir Room" for a finding touching two devices).
+// Exact-match-only is deliberate: a substring match would make
+// "Learning Center" also match "Learning Center near Gym", etc.
+function findingsForNode(node) {
+  if (!liveFindings.length) return [];
+  const name = (node.name || '').toLowerCase().trim();
+  return liveFindings.filter(f => {
+    const areaParts = (f.area || '').toLowerCase().split('/').map(s => s.trim());
+    return areaParts.includes(name);
+  });
+}
+
+// Notes are keyed by MAC where available; falls back to the node's
+// internal id for devices with no MAC (e.g. the VoIP phone).
+function noteKeyForNode(node) {
+  return (node.mac || node.id || '').toLowerCase();
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s || '';
+  return div.innerHTML;
+}
+
+function timeAgo(iso) {
+  if (!iso) return '';
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+
+async function saveNote(noteKey) {
+  const textarea = document.getElementById('notes-textarea');
+  const status = document.getElementById('notes-status');
+  const text = textarea.value;
+  status.textContent = 'Saving…';
+  try {
+    const r = await fetch(BACKEND_URL + '/api/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mac: noteKey, text, author: 'staff' })
+    });
+    if (!r.ok) throw new Error('save failed');
+    const saved = await r.json();
+    liveNotes[noteKey] = { text: saved.text, author: saved.author, updated_at: saved.updated_at };
+    status.textContent = 'Saved just now';
+  } catch (e) {
+    status.textContent = 'Save failed — check connection';
+  }
 }
 
 async function fetchPortData() {
