@@ -341,151 +341,138 @@ function buildDefaultData() {
   const nodes = [
     // ISP
     { id:'isp', name:'Antietam Broadband', type:'isp', status:'online',
-      ip:'24.235.81.138', model:'WAN', uplink:'—', uplinkPort:'—',
-      notes:'ASN 14291 · 10 GbE SFP+ WAN' },
+      ip:'24.235.81.138', model:'WAN', uplink:'—', uplinkPort:'—' },
 
     // Router
     { id:'router', name:'Experience Gateway Edge Router', type:'router', status:'online',
       ip:'10.0.0.1', model:'UDM-SE (UDMPROSE)', mac:'6c:63:f8:9f:88:51',
       version:'5.1.31', cpu:'31.4', mem:'69.7', uplink:'Antietam Broadband', uplinkPort:'SFP+ 2',
-      uplinkSpeed:'10 GbE', notes:'UDM-SE · FW 5.1.31 · Network App 10.4.57' },
+      uplinkSpeed:'10 GbE' },
 
     // Switches
     { id:'sw1', name:'USW-48-PoE', type:'switch', status:'online',
       ip:'10.0.0.3', model:'USW-48-PoE (USL48PB)', mac:'58:d6:1f:25:27:e8',
       cpu:'14.3', mem:'39.8', uplink:'Experience Gateway Edge Router', uplinkPort:'Port 3 → Port 47',
-      uplinkSpeed:'GbE', notes:'SW1 · STP Root · 48-port PoE' },
+      uplinkSpeed:'GbE' },
 
     { id:'sw2', name:'Media room-48-PoE', type:'switch', status:'online',
       ip:'10.0.0.2', model:'USW-48-PoE (USL48PB)', mac:'58:d6:1f:44:f6:78',
       cpu:'14.1', mem:'40.0', uplink:'Experience Gateway Edge Router', uplinkPort:'Port 1 → Port 7',
-      uplinkSpeed:'GbE', notes:'SW2 · 48-port PoE · Media Room' },
+      uplinkSpeed:'GbE' },
 
     { id:'sw3', name:'USW-Lite-16-PoE', type:'switch', status:'online',
       ip:'10.0.0.20', model:'USW-Lite-16-PoE (USL16LPB)', mac:'58:d6:1f:8d:bb:88',
       cpu:'12.0', mem:'39.3', uplink:'USW-Lite-8-PoE (SW4b)', uplinkPort:'Port 2 → Port 6',
-      uplinkSpeed:'GbE', notes:'SW3 · Replaced rogue Cisco switch · Uplinks to SW4b' },
+      uplinkSpeed:'GbE' },
 
     { id:'sw4', name:'USW-Lite-8-PoE (SW4b)', type:'switch', status:'online',
       ip:'10.0.0.237', model:'USW-Lite-8-PoE (USL8LPB)', mac:'58:d6:1f:60:bc:d4',
       cpu:'6.7', mem:'39.5', uplink:'Experience Gateway Edge Router', uplinkPort:'Port 2 → Port 1',
-      uplinkSpeed:'GbE', notes:'SW4b · 8-port PoE · Direct to Router Port 2 · Cable move complete June 2026 · IP 10.0.0.237' },
+      uplinkSpeed:'GbE' },
 
     { id:'sw4a', name:'USW-Lite-8-PoE (SW4a)', type:'switch', status:'online',
       ip:'10.0.0.19', model:'USW-Lite-8-PoE (USL8LPB)', mac:'58:d6:1f:60:86:f5',
       cpu:'6.9', mem:'38.5', uplink:'USW-Lite-16-PoE', uplinkPort:'Port 5 → Port 8',
-      uplinkSpeed:'GbE', notes:'SW4a · 8-port PoE · Learning Center wing' },
+      uplinkSpeed:'GbE' },
 
     // APs under SW1 (USW-48-PoE)
     { id:'ap-chapel', name:'Chapel', type:'ap', status:'online',
       ip:'10.0.0.12', model:'U7 LT (UAPA693)', mac:'84:78:48:c0:4e:ba',
       uplink:'USW-Lite-8-PoE', uplinkPort:'Port —', uplinkSpeed:'GbE',
-      ch24:'11 (20 MHz)', ch5:'48 (80 MHz)',
-      notes:'Chapel main coverage' },
+      ch24:'11 (20 MHz)', ch5:'48 (80 MHz)' },
 
-    // Yealink VoIP phone
+    // Yealink VoIP phones (3x SIP-T77U) - confirmed wired on the
+    // Default/trusted network, satisfaction 100, no anomalies as of
+    // last check. Previously documented as failing due to guest-network
+    // client isolation; that appears to have been fixed at some point
+    // without the docs being updated - leaving this node's notes blank
+    // rather than carrying forward a stale problem statement.
     { id:'voip-kitchen', name:'Yealink SIP-T77U', type:'ap', status:'online',
       ip:'—', model:'SIP-T77U (VoIP Handset)', mac:'',
-      uplink:'USW-Lite-8-PoE', uplinkPort:'—', uplinkSpeed:'GbE',
-      notes:'⚠ Kitchen VoIP handset · SIP registration failing due to client isolation on ExperienceGateway · Fix: move to Learning Center SSID' },
+      uplink:'USW-Lite-8-PoE', uplinkPort:'—', uplinkSpeed:'GbE' },
 
     { id:'ap-choir', name:'Choir Room', type:'ap', status:'online',
       ip:'10.0.0.5', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7a:b3:52',
       uplink:'USW-48-PoE', uplinkPort:'Port 10', uplinkSpeed:'GbE',
-      ch24:'6 (20 MHz)', ch5:'48 (80 MHz)',
-      notes:'AC Pro (older U7PG2) is physically close enough to cause 5GHz interference — see live Findings below for current channel comparison. Fix on file: replace AC Pro with a U7 Lite.' },
+      ch24:'6 (20 MHz)', ch5:'48 (80 MHz)' },
 
     { id:'ap-conf', name:'Conference Room', type:'ap', status:'online',
       ip:'10.0.0.9', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7a:8a:1b',
       uplink:'USW-48-PoE', uplinkPort:'Port 4', uplinkSpeed:'GbE',
-      ch24:'11 (20 MHz)', ch5:'40 (80 MHz)',
-      notes:'Conference room coverage' },
+      ch24:'11 (20 MHz)', ch5:'40 (80 MHz)' },
 
     { id:'ap-lobby', name:'Main Lobby', type:'ap', status:'online',
       ip:'10.0.0.13', model:'U7 LT (UAPA693)', mac:'84:78:48:c0:3b:73',
       uplink:'USW-48-PoE', uplinkPort:'Port 3', uplinkSpeed:'GbE',
-      ch24:'11 (20 MHz)', ch5:'36 (80 MHz)',
-      notes:'Main lobby coverage' },
+      ch24:'11 (20 MHz)', ch5:'36 (80 MHz)' },
 
     { id:'ap-pastor', name:"Pastor Rodney's Office", type:'ap', status:'online',
       ip:'10.0.0.4', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7a:89:22',
       uplink:'USW-48-PoE', uplinkPort:'Port 27', uplinkSpeed:'GbE',
-      ch24:'11 (20 MHz)', ch5:'40 (40 MHz)',
-      notes:'Low tx power — low profile placement' },
+      ch24:'11 (20 MHz)', ch5:'40 (40 MHz)' },
 
     // APs under SW2 (Media room-48-PoE)
     { id:'ap-sound', name:'Sound Booth', type:'ap', status:'online',
       ip:'10.0.0.10', model:'U7 LR v2 (UAPA6B3)', mac:'84:78:48:c0:4e:bd',
       uplink:'Media room-48-PoE', uplinkPort:'Port 3', uplinkSpeed:'GbE',
       ch24:'1 (20 MHz)', ch5:'36 (80 MHz)',
-      ssids:['ExperienceMedia','ExperienceGateway','Leaders'],
-      notes:'Sound Booth · ExperienceMedia SSID primary' },
+      ssids:['ExperienceMedia','ExperienceGateway','Leaders'] },
 
     { id:'ap-youth', name:'Youth Room', type:'ap', status:'online',
       ip:'10.0.0.7', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7a:b3:af',
       uplink:'Media room-48-PoE', uplinkPort:'Port 6', uplinkSpeed:'GbE',
-      ch24:'1 (20 MHz)', ch5:'48 (80 MHz)',
-      notes:'Youth Room desk placement' },
+      ch24:'1 (20 MHz)', ch5:'48 (80 MHz)' },
 
     { id:'ap-acpro', name:'AC Pro', type:'ap', status:'online',
       ip:'10.0.0.21', model:'UAP-AC-Pro (U7PG2)', mac:'fc:ec:da:f0:e5:c1',
       uplink:'Media room-48-PoE', uplinkPort:'Port 5', uplinkSpeed:'GbE',
-      ch24:'11 (20 MHz)', ch5:'48 (80 MHz)',
-      notes:'⚠ Older model in choir room area — causing 5GHz interference. Priority: adopt or replace.' },
+      ch24:'11 (20 MHz)', ch5:'48 (80 MHz)' },
 
     { id:'ap-stage', name:'Stage Right (Wall Top)', type:'ap', status:'online',
       ip:'10.0.0.18', model:'U7 LT (UAPA693)', mac:'fc:ec:da:f0:e7:64',
       uplink:'Media room-48-PoE', uplinkPort:'Port 8', uplinkSpeed:'GbE',
-      ch24:'6 (20 MHz)', ch5:'44 (40 MHz)',
-      notes:'Stage right, on top of wall' },
+      ch24:'6 (20 MHz)', ch5:'44 (40 MHz)' },
 
     { id:'ap-security', name:'Security Office', type:'ap', status:'online',
       ip:'10.0.0.15', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7a:88:d4',
       uplink:'Media room-48-PoE', uplinkPort:'Port 13', uplinkSpeed:'GbE',
-      ch24:'1 (20 MHz)', ch5:'44 (80 MHz)',
-      notes:'Security office coverage' },
+      ch24:'1 (20 MHz)', ch5:'44 (80 MHz)' },
 
     // AP directly on router
     { id:'ap-office', name:'Office Hallway', type:'ap', status:'online',
       ip:'10.0.0.8', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7c:36:ba',
       uplink:'Experience Gateway Edge Router', uplinkPort:'Port 5', uplinkSpeed:'GbE',
-      ch24:'6 (20 MHz)', ch5:'44 (80 MHz)',
-      notes:'Direct connection to router · Wiring closet area · Consider relocating AP' },
+      ch24:'6 (20 MHz)', ch5:'44 (80 MHz)' },
 
     // APs under SW3 (USW-Lite-16-PoE)
     { id:'ap-gym', name:'Gym / Kitchen', type:'ap', status:'online',
       ip:'10.0.0.11', model:'U7 LR v2 (UAPA6B3)', mac:'84:78:48:c0:4e:84',
       uplink:'USW-Lite-16-PoE', uplinkPort:'Port 2', uplinkSpeed:'GbE',
-      ch24:'11 (20 MHz)', ch5:'44 (80 MHz)',
-      notes:'Gym/kitchen coverage' },
+      ch24:'11 (20 MHz)', ch5:'44 (80 MHz)' },
 
     { id:'ap-kidz', name:'Kidz Zone', type:'ap', status:'online',
       ip:'10.0.0.6', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7a:b4:00',
       uplink:'USW-Lite-16-PoE', uplinkPort:'Port 7', uplinkSpeed:'GbE',
       ch24:'6 (20 MHz)', ch5:'36 (80 MHz)',
-      ssids:['Learning Center','Leaders','ExperienceGateway'],
-      notes:'Kidz Zone · Learning Center SSID' },
+      ssids:['Learning Center','Leaders','ExperienceGateway'] },
 
     { id:'ap-lc', name:'Learning Center', type:'ap', status:'offline',
       ip:'10.0.0.14', model:'U7 LR v2 (UAPA6B3)', mac:'84:78:48:c0:4c:02',
       uplink:'USW-Lite-16-PoE', uplinkPort:'Port 5', uplinkSpeed:'GbE',
-      ch24:'6 (20 MHz)', ch5:'48 (80 MHz)',
-      notes:'⚠ OFFLINE — dome mounted upside down, not yet physically mounted. Replacement/reconfiguration needed.' },
+      ch24:'6 (20 MHz)', ch5:'48 (80 MHz)' },
 
     // APs under SW4 (USW-Lite-8-PoE)
     { id:'ap-lcgym', name:'Learning Center near Gym', type:'ap', status:'online',
       ip:'10.0.0.16', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7a:89:df',
       uplink:'USW-Lite-8-PoE', uplinkPort:'Port 3', uplinkSpeed:'GbE',
       ch24:'1 (20 MHz)', ch5:'40 (80 MHz)',
-      ssids:['Learning Center','Leaders'],
-      notes:'New install · Learning Center classroom wing' },
+      ssids:['Learning Center','Leaders'] },
 
     { id:'ap-lckitchen', name:'Learning Center near Kitchen', type:'ap', status:'online',
       ip:'10.0.0.17', model:'U7 LT (UAPA693)', mac:'94:2a:6f:7c:74:b5',
       uplink:'USW-Lite-8-PoE', uplinkPort:'Port 4', uplinkSpeed:'GbE',
       ch24:'6 (20 MHz)', ch5:'36 (80 MHz)',
-      ssids:['Learning Center','Leaders'],
-      notes:'New install · Learning Center classroom wing' },
+      ssids:['Learning Center','Leaders'] },
   ];
 
   const links = [
@@ -859,14 +846,10 @@ function openPanel(node) {
     html += '</div>';
   }
 
-  // Static documentation notes (hand-written, from the map's own data)
-  if(node.notes) {
-    html += `<div class="detail-section"><div class="detail-section-title">Documentation</div>
-      <div style="font-size:12px;color:var(--text2);line-height:1.6">${node.notes}</div></div>`;
-  }
-
   // Live diagnostic findings — pulled fresh from /api/diagnostics each
-  // load, so these clear on their own once the underlying issue is fixed
+  // load, so these clear on their own once the underlying issue is fixed.
+  // This is the ONLY automated/system-generated section - never manually
+  // edited, never static.
   const findings = findingsForNode(node);
   if(findings.length) {
     html += `<div class="detail-section"><div class="detail-section-title">Findings (Live)</div>`;
