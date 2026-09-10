@@ -215,6 +215,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <h1><span>ExperienceChurch</span> · Network Topology</h1>
   <span class="badge badge-online" id="online-count">● 20 Online</span>
   <span class="badge badge-offline" id="offline-count">● 1 Offline</span>
+  <span id="global-findings-badge" class="badge" style="display:none;background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3);cursor:pointer" title="Findings not tied to a specific device (e.g. network/SSID-wide issues)"></span>
   <div id="live-indicator" title="Auto-refreshes from GitHub Actions hourly">
     <div id="live-dot"></div>
     <span id="live-timestamp">static data</span>
@@ -1070,7 +1071,58 @@ async function loadLiveAndPortData() {
   liveFindings = await fetchDiagnostics();
   liveNotes = await fetchNotes();
 
+  updateGlobalFindingsBadge();
   refreshVisualization();
+}
+
+// Findings whose area doesn't exactly match any device node - e.g. an
+// SSID-disabled finding, since SSIDs aren't device nodes on this map.
+// Surfaced in a header badge instead of silently dropped, so nothing
+// automated gets lost just because it doesn't fit the per-device panel.
+function computeGlobalFindings() {
+  if (!liveFindings.length) return [];
+  const nodeNames = new Set(networkData.nodes.map(n => (n.name || '').toLowerCase().trim()));
+  return liveFindings.filter(f => {
+    const areaParts = (f.area || '').toLowerCase().split('/').map(s => s.trim());
+    return !areaParts.some(p => nodeNames.has(p));
+  });
+}
+
+function updateGlobalFindingsBadge() {
+  const badge = document.getElementById('global-findings-badge');
+  const globalFindings = computeGlobalFindings();
+  if (globalFindings.length === 0) {
+    badge.style.display = 'none';
+    badge.onclick = null;
+    return;
+  }
+  badge.style.display = 'inline-block';
+  badge.textContent = `⚠ ${globalFindings.length} network-wide`;
+  badge.onclick = () => showGlobalFindingsPanel(globalFindings);
+}
+
+function showGlobalFindingsPanel(globalFindings) {
+  selectedId = null;
+  d3.selectAll('.node-group').classed('selected', false);
+  const panel = document.getElementById('detail-panel');
+  panel.classList.remove('hidden');
+  document.getElementById('panel-device-type').textContent = 'Network-Wide';
+  document.getElementById('panel-name').textContent = 'Findings';
+  const dot = document.getElementById('panel-status-dot');
+  const txt = document.getElementById('panel-status-text');
+  dot.style.background = 'var(--red)';
+  txt.style.color = 'var(--red)';
+  txt.textContent = `${globalFindings.length} finding(s)`;
+
+  let html = `<div class="detail-section"><div class="detail-section-title">Findings (Live)</div>`;
+  globalFindings.forEach(f => {
+    const color = f.severity === 'critical' ? 'red' : f.severity === 'warning' ? 'amber' : '';
+    html += `<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:6px">
+      <span class="detail-val ${color}" style="display:inline;font-family:inherit;font-weight:600">${f.severity || 'info'}</span> — <b>${escapeHtml(f.area)}</b>: ${escapeHtml(f.message)}
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('panel-body').innerHTML = html;
 }
 
 async function fetchDiagnostics() {
