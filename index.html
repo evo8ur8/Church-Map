@@ -108,6 +108,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   color:var(--cyan);margin-bottom:4px}
 .radio-details{font-size:11px;color:var(--text2)}
 .radio-details span{color:var(--text);font-family:'JetBrains Mono',monospace}
+#notes-textarea{border:1px solid var(--border)}
+#notes-textarea.ai-note{border:1px solid var(--indigo);border-left:3px solid var(--indigo)}
+.note-ai-badge{
+  background:rgba(91,125,255,.15);color:var(--indigo);border:1px solid rgba(91,125,255,.3);
+  padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600;letter-spacing:.04em;
+  text-transform:uppercase;margin-left:4px;display:inline-block
+}
 #panel-close{
   position:absolute;top:14px;right:16px;width:22px;height:22px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
@@ -899,17 +906,19 @@ function openPanel(node) {
   }
 
   // Editable notes — persisted via /api/notes on the backend, so
-  // they're shared across anyone viewing the map, and the AI agent
-  // will eventually be able to write here too
+  // they're shared across anyone viewing the map. AI-authored notes
+  // get an indigo accent + "AI" pill so staff can tell at a glance
+  // which notes came from the agent vs. a person.
   const noteKey = noteKeyForNode(node);
   const existingNote = liveNotes[noteKey];
+  const isAiNote = existingNote && existingNote.author === 'ai-agent';
   html += `<div class="detail-section"><div class="detail-section-title">Notes</div>
-    <textarea id="notes-textarea" style="width:100%;min-height:70px;background:var(--surface2);
-      border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;
+    <textarea id="notes-textarea" class="${isAiNote ? 'ai-note' : ''}" style="width:100%;min-height:70px;background:var(--surface2);
+      border-radius:6px;color:var(--text);font-size:12px;
       font-family:'Inter',sans-serif;padding:8px;resize:vertical"
       placeholder="Add a note about this device…">${escapeHtml(existingNote ? existingNote.text : '')}</textarea>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-      <span id="notes-status" style="font-size:10px;color:var(--text3)">${existingNote ? 'Updated ' + timeAgo(existingNote.updated_at) + (existingNote.author ? ' by ' + escapeHtml(existingNote.author) : '') : ''}</span>
+      <span id="notes-status" style="font-size:10px;color:var(--text3)">${existingNote ? 'Updated ' + timeAgo(existingNote.updated_at) + (existingNote.author ? ' by ' + escapeHtml(existingNote.author) : '') + noteAuthorBadge(existingNote.author) : ''}</span>
       <button class="btn" style="padding:4px 10px;font-size:11px" onclick="saveNote('${noteKey}')">Save</button>
     </div>
   </div>`;
@@ -1253,6 +1262,14 @@ function noteKeyForNode(node) {
   return (node.mac || node.id || '').toLowerCase();
 }
 
+// Small "AI" pill shown next to the author line when a note was
+// written by the agent (author === "ai-agent"), so staff can tell at
+// a glance which notes are AI-authored vs. human-written.
+function noteAuthorBadge(author) {
+  if (author !== 'ai-agent') return '';
+  return ' <span class="note-ai-badge">AI</span>';
+}
+
 function escapeHtml(s) {
   const div = document.createElement('div');
   div.textContent = s || '';
@@ -1284,7 +1301,8 @@ async function saveNote(noteKey) {
     if (!r.ok) throw new Error('save failed');
     const saved = await r.json();
     liveNotes[noteKey] = { text: saved.text, author: saved.author, updated_at: saved.updated_at };
-    status.textContent = 'Saved just now';
+    status.innerHTML = 'Saved just now' + noteAuthorBadge(saved.author);
+    textarea.classList.toggle('ai-note', saved.author === 'ai-agent');
   } catch (e) {
     status.textContent = 'Save failed — check connection';
   }
